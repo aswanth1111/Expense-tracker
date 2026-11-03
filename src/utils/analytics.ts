@@ -222,7 +222,7 @@ export const computeHowSpending = (expenses: Expense[]): WhereHowSpending[] => {
   return list.sort((a, b) => b.total - a.total);
 };
 
-export const computeSummaryStats = (expenses: Expense[]): SummaryStats => {
+export const computeSummaryStats = (expenses: Expense[], totalMoney: number = 0): SummaryStats => {
   const totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
   const transactionCount = expenses.length;
 
@@ -252,6 +252,9 @@ export const computeSummaryStats = (expenses: Expense[]): SummaryStats => {
       ? whereGroups[1]
       : null;
 
+  const remainingBalance = totalMoney - totalSpent;
+  const spentPercentage = totalMoney > 0 ? Number(((totalSpent / totalMoney) * 100).toFixed(1)) : 0;
+
   return {
     totalSpent,
     transactionCount,
@@ -260,5 +263,8 @@ export const computeSummaryStats = (expenses: Expense[]): SummaryStats => {
     highestSpendingDay,
     topCategory,
     topMerchant,
+    totalMoney,
+    remainingBalance,
+    spentPercentage,
   };
 };

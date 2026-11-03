@@ -74,12 +74,15 @@ describe('Analytics Utility Functions', () => {
     expect(transport?.percentage).toBe(45.5);
   });
 
-  it('calculates summary statistics correctly', () => {
-    const stats = computeSummaryStats(mockExpenses);
+  it('calculates summary statistics including Total Money & Remaining Balance', () => {
+    const stats = computeSummaryStats(mockExpenses, 5000);
     expect(stats.totalSpent).toBe(1100);
     expect(stats.transactionCount).toBe(3);
     expect(stats.distinctDays).toBe(2);
     expect(stats.dailyAverage).toBe(550); // 1100 / 2
+    expect(stats.totalMoney).toBe(5000);
+    expect(stats.remainingBalance).toBe(3900); // 5000 - 1100
+    expect(stats.spentPercentage).toBe(22); // (1100 / 5000) * 100
     expect(stats.highestSpendingDay).not.toBeNull();
     if (stats.highestSpendingDay) {
       expect(stats.highestSpendingDay.date).toBe('2026-10-01');
@@ -113,8 +116,8 @@ describe('Analytics Utility Functions', () => {
     expect(resMerchant[0].id).toBe('3');
   });
 
-  it('formats currency in Rupees (₹)', () => {
-    expect(formatCurrency(1500)).toContain('₹');
-    expect(formatCurrency(1500)).toContain('1,500');
+  it('formats currency in Rupees (₹) with negative support', () => {
+    expect(formatCurrency(1500)).toBe('₹1,500');
+    expect(formatCurrency(-500)).toBe('-₹500');
   });
 });

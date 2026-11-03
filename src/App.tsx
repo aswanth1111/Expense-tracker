@@ -9,6 +9,7 @@ import { CategoryWiseView } from './components/CategoryWiseView';
 import { WhereHowView } from './components/WhereHowView';
 import { TransactionList } from './components/TransactionList';
 import { ExpenseModal } from './components/ExpenseModal';
+import { BudgetModal } from './components/BudgetModal';
 import { Trash2, Plus } from 'lucide-react';
 
 const MainAppContent: React.FC = () => {
@@ -59,6 +60,9 @@ const MainAppContent: React.FC = () => {
 
       {/* Global Add/Edit Expense Modal */}
       <ExpenseModal />
+
+      {/* Set Total Money / Budget Modal */}
+      <BudgetModal />
 
       {/* Footer */}
       <footer className="border-t border-slate-200 bg-white py-4 sm:py-6 mt-8 sm:mt-12">

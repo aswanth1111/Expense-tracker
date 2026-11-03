@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useExpense } from '../context/ExpenseContext';
 import { StatsOverview } from './StatsOverview';
+import { BudgetBanner } from './BudgetBanner';
 import { CategoryIcon } from './CategoryIcon';
 import { CATEGORIES, PAYMENT_METHODS } from '../constants/categories';
 import { formatCurrency, formatShortDate, formatExpenseDate } from '../utils/formatters';
@@ -40,14 +41,20 @@ export const OverviewView: React.FC = () => {
   if (expenses.length === 0) {
     return (
       <div className="space-y-4 sm:space-y-6">
+        {/* Total Money / Budget Banner */}
+        <BudgetBanner />
+
+        {/* Stats */}
         <StatsOverview />
+
+        {/* Empty State Prompt */}
         <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200/80 p-6 sm:p-12 text-center shadow-xs">
           <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-3 sm:mb-4 shadow-xs">
             <Plus className="w-7 h-7 sm:w-8 sm:h-8 stroke-[2.5]" />
           </div>
           <h3 className="text-lg sm:text-xl font-bold text-slate-900">Start Adding Your Expenses!</h3>
           <p className="text-xs sm:text-sm text-slate-500 mt-1.5 sm:mt-2 max-w-md mx-auto">
-            Ready to track your daily spending in Rupees (₹). Enter the amount, reason, select Cash or UPI (Kotak/Union), and see your daily analytics.
+            Ready to track your daily spending in Rupees (₹). Enter the amount, reason, select Cash or UPI (Kotak/Union), and see your daily analytics and remaining balance.
           </p>
           <div className="mt-5 sm:mt-6 flex flex-wrap items-center justify-center gap-3">
             <button
@@ -78,10 +85,13 @@ export const OverviewView: React.FC = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* 1. KPI Stats Cards */}
+      {/* 1. Total Money / Budget Banner */}
+      <BudgetBanner />
+
+      {/* 2. KPI Stats Cards */}
       <StatsOverview />
 
-      {/* 2. Side-by-Side Visual Overview */}
+      {/* 3. Side-by-Side Visual Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
         {/* Left: 7-Day Spending Trend */}
         <div className="lg:col-span-7 bg-white rounded-xl sm:rounded-2xl border border-slate-200/80 p-3.5 sm:p-5 shadow-xs">
@@ -194,7 +204,7 @@ export const OverviewView: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. Where & How Mini Highlights Strip */}
+      {/* 4. Where & How Mini Highlights Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4">
         {/* Top Place */}
         <div
@@ -253,7 +263,7 @@ export const OverviewView: React.FC = () => {
         </div>
       </div>
 
-      {/* 4. Recent Transactions Table */}
+      {/* 5. Recent Transactions Table */}
       <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
         <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 flex items-center justify-between">
           <div>

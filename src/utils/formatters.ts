@@ -1,15 +1,18 @@
 import { parseISO, format, isToday, isYesterday } from 'date-fns';
 
 export const formatCurrency = (amount: number): string => {
+  const isNegative = amount < 0;
+  const absAmount = Math.abs(amount);
+
   try {
     const formattedNum = new Intl.NumberFormat('en-IN', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
-    }).format(amount);
+    }).format(absAmount);
     
-    return `₹${formattedNum}`;
+    return isNegative ? `-₹${formattedNum}` : `₹${formattedNum}`;
   } catch {
-    return `₹${amount.toFixed(2)}`;
+    return isNegative ? `-₹${absAmount.toFixed(2)}` : `₹${absAmount.toFixed(2)}`;
   }
 };
 

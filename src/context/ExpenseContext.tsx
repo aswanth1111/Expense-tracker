@@ -26,6 +26,8 @@ interface ExpenseContextType {
   activeTab: ActiveTab;
   isFormOpen: boolean;
   editingExpense: Expense | null;
+  totalMoney: number;
+  isBudgetModalOpen: boolean;
   dailySpendingDesc: DailySpending[];
   dailySpendingAsc: DailySpending[];
   categorySpending: CategorySpending[];
@@ -40,6 +42,9 @@ interface ExpenseContextType {
   openAddModal: () => void;
   openEditModal: (exp: Expense) => void;
   closeFormModal: () => void;
+  openBudgetModal: () => void;
+  closeBudgetModal: () => void;
+  setTotalMoney: (amount: number) => void;
   addExpense: (data: Omit<Expense, 'id' | 'createdAt'>) => void;
   updateExpense: (id: string, data: Partial<Omit<Expense, 'id' | 'createdAt'>>) => void;
   deleteExpense: (id: string) => void;
@@ -47,6 +52,7 @@ interface ExpenseContextType {
 }
 
 const STORAGE_KEY = 'user_fresh_expenses_v3';
+const STORAGE_BUDGET_KEY = 'user_total_money_v1';
 
 const initialFilters: ExpenseFilters = {
   search: '',
@@ -61,7 +67,6 @@ const ExpenseContext = createContext<ExpenseContextType | undefined>(undefined);
 export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [expenses, setExpenses] = useState<Expense[]>(() => {
     try {
-      // Aggressively purge all old sample data keys
       localStorage.removeItem('antigravity_expenses_v1');
       localStorage.removeItem('antigravity_expenses_v2');
       localStorage.removeItem('antigravity_currency_v1');
@@ -69,7 +74,6 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        // Ensure only real user expenses remain
         return Array.isArray(parsed) ? parsed : [];
       }
     } catch (e) {
@@ -78,10 +82,24 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return [];
   });
 
+  const [totalMoney, setTotalMoneyState] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_BUDGET_KEY);
+      if (saved) {
+        const parsed = parseFloat(saved);
+        return isNaN(parsed) ? 0 : parsed;
+      }
+    } catch (e) {
+      console.error('Failed to load total money', e);
+    }
+    return 0;
+  });
+
   const [filters, setFilters] = useState<ExpenseFilters>(initialFilters);
   const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
   const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [isBudgetModalOpen, setIsBudgetModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     try {
@@ -90,6 +108,26 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
       console.error('Failed to save expenses to localStorage', e);
     }
   }, [expenses]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_BUDGET_KEY, String(totalMoney));
+    } catch (e) {
+      console.error('Failed to save total money to localStorage', e);
+    }
+  }, [totalMoney]);
+
+  const setTotalMoney = (amount: number) => {
+    setTotalMoneyState(Math.max(0, amount));
+  };
+
+  const openBudgetModal = () => {
+    setIsBudgetModalOpen(true);
+  };
+
+  const closeBudgetModal = () => {
+    setIsBudgetModalOpen(false);
+  };
 
   const resetFilters = () => {
     setFilters(initialFilters);
@@ -166,8 +204,8 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [filteredExpenses]);
 
   const summaryStats = useMemo(() => {
-    return computeSummaryStats(filteredExpenses);
-  }, [filteredExpenses]);
+    return computeSummaryStats(filteredExpenses, totalMoney);
+  }, [filteredExpenses, totalMoney]);
 
   return (
     <ExpenseContext.Provider
@@ -178,6 +216,8 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
         activeTab,
         isFormOpen,
         editingExpense,
+        totalMoney,
+        isBudgetModalOpen,
         dailySpendingDesc,
         dailySpendingAsc,
         categorySpending,
@@ -190,6 +230,9 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
         openAddModal,
         openEditModal,
         closeFormModal,
+        openBudgetModal,
+        closeBudgetModal,
+        setTotalMoney,
         addExpense,
         updateExpense,
         deleteExpense,

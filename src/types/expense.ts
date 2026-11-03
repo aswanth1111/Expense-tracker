@@ -22,7 +22,7 @@ export interface Expense {
   category: CategoryId;    // Category
   merchant?: string;       // Where it was spent (e.g. Store/Place)
   paymentMethod: PaymentMethod; // Cash | UPI (Kotak) | UPI (Union)
-  date: string;            // ISO Date: YYYY-MM-DD (automatically set to today's date)
+  date: string;            // ISO Date: YYYY-MM-DD
   time?: string;           // HH:mm
   createdAt: number;       // Unix timestamp for sorting
 }
@@ -89,4 +89,7 @@ export interface SummaryStats {
   highestSpendingDay: { date: string; displayDate: string; amount: number } | null;
   topCategory: CategorySpending | null;
   topMerchant: WhereHowSpending | null;
+  totalMoney: number;
+  remainingBalance: number;
+  spentPercentage: number;
 }
