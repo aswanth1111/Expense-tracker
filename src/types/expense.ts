@@ -27,6 +27,54 @@ export interface Expense {
   createdAt: number;       // Unix timestamp for sorting
 }
 
+// ----------------------------------------------------
+// Account & Wallet Balances (Cash, UPI Kotak, UPI Union)
+// ----------------------------------------------------
+export interface AccountBalances {
+  cash: number;
+  upi_kotak: number;
+  upi_union: number;
+}
+
+export interface AccountDetail {
+  id: PaymentMethod;
+  name: string;
+  totalMoney: number;   // Total funds deposited into this account
+  spent: number;        // Total spent on expenses from this account
+  lent: number;         // Total currently lent (pending) from this account
+  balance: number;      // totalMoney - spent - lent
+}
+
+export interface AccountSummary {
+  cash: AccountDetail;
+  upi_kotak: AccountDetail;
+  upi_union: AccountDetail;
+}
+
+// ----------------------------------------------------
+// Money Lending to Friends Tracker
+// ----------------------------------------------------
+export type LoanStatus = 'pending' | 'settled';
+
+export interface LendingRecord {
+  id: string;
+  friendName: string;            // Name of friend / borrower
+  amount: number;                // Amount lent in ₹
+  account: PaymentMethod;        // Account from which money was lent (cash | upi_kotak | upi_union)
+  date: string;                  // YYYY-MM-DD
+  notes?: string;                // Reason or notes
+  status: LoanStatus;            // 'pending' (yet to receive) | 'settled' (received back)
+  settledDate?: string;          // YYYY-MM-DD when repaid
+  createdAt: number;             // Timestamp
+}
+
+export interface LendingSummary {
+  totalLentPending: number;      // Total money currently pending from friends
+  totalSettled: number;          // Total money recovered/settled
+  activeLoansCount: number;      // Number of friends with active pending loans
+  settledLoansCount: number;     // Number of settled loans
+}
+
 export interface CategoryInfo {
   id: CategoryId;
   name: string;
@@ -89,7 +137,10 @@ export interface SummaryStats {
   highestSpendingDay: { date: string; displayDate: string; amount: number } | null;
   topCategory: CategorySpending | null;
   topMerchant: WhereHowSpending | null;
-  totalMoney: number;
-  remainingBalance: number;
+  totalMoney: number;            // Grand total across all 3 accounts
+  remainingBalance: number;      // Grand total remaining across all 3 accounts
   spentPercentage: number;
+  accountBalances: AccountBalances;
+  accounts: AccountSummary;
+  lendingSummary: LendingSummary;
 }

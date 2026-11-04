@@ -3,20 +3,33 @@ import {
   LayoutDashboard,
   CalendarDays,
   PieChart,
-  MapPin,
+  HandCoins,
   ListOrdered,
 } from 'lucide-react';
 import { useExpense } from '../context/ExpenseContext';
 import type { ActiveTab } from '../context/ExpenseContext';
 
 export const MobileNav: React.FC = () => {
-  const { activeTab, setActiveTab } = useExpense();
+  const { activeTab, setActiveTab, summaryStats } = useExpense();
 
-  const navItems: { id: ActiveTab; label: string; icon: React.ReactNode }[] = [
+  const navItems: {
+    id: ActiveTab;
+    label: string;
+    icon: React.ReactNode;
+    badge?: number;
+  }[] = [
     { id: 'overview', label: 'Overview', icon: <LayoutDashboard className="w-5 h-5" /> },
     { id: 'day-by-day', label: 'Daily', icon: <CalendarDays className="w-5 h-5" /> },
     { id: 'category-wise', label: 'Category', icon: <PieChart className="w-5 h-5" /> },
-    { id: 'where-how', label: 'Where/How', icon: <MapPin className="w-5 h-5" /> },
+    {
+      id: 'lending',
+      label: 'Lending',
+      icon: <HandCoins className="w-5 h-5" />,
+      badge:
+        summaryStats.lendingSummary.activeLoansCount > 0
+          ? summaryStats.lendingSummary.activeLoansCount
+          : undefined,
+    },
     { id: 'transactions', label: 'Expenses', icon: <ListOrdered className="w-5 h-5" /> },
   ];
 
@@ -29,18 +42,23 @@ export const MobileNav: React.FC = () => {
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer min-w-[56px] ${
+              className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all cursor-pointer min-w-[52px] relative ${
                 isActive
                   ? 'text-indigo-600 font-bold scale-105'
                   : 'text-slate-400 hover:text-slate-600 font-medium'
               }`}
             >
               <div
-                className={`p-1 rounded-lg transition-colors ${
+                className={`p-1 rounded-lg transition-colors relative ${
                   isActive ? 'bg-indigo-50 text-indigo-600' : 'text-slate-400'
                 }`}
               >
                 {item.icon}
+                {item.badge !== undefined && (
+                  <span className="absolute -top-1 -right-1.5 w-4 h-4 bg-amber-500 text-white text-[9px] font-black rounded-full flex items-center justify-center ring-2 ring-white">
+                    {item.badge}
+                  </span>
+                )}
               </div>
               <span className="text-[10px] tracking-tight mt-0.5 leading-none">
                 {item.label}

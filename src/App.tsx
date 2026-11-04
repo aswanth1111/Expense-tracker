@@ -7,13 +7,23 @@ import { OverviewView } from './components/OverviewView';
 import { DayByDayView } from './components/DayByDayView';
 import { CategoryWiseView } from './components/CategoryWiseView';
 import { WhereHowView } from './components/WhereHowView';
+import { LendingView } from './components/LendingView';
 import { TransactionList } from './components/TransactionList';
 import { ExpenseModal } from './components/ExpenseModal';
 import { BudgetModal } from './components/BudgetModal';
+import { LendingModal } from './components/LendingModal';
+import { FirebaseConfigModal } from './components/FirebaseConfigModal';
 import { Trash2, Plus } from 'lucide-react';
 
 const MainAppContent: React.FC = () => {
-  const { activeTab, clearAllExpenses, expenses, openAddModal } = useExpense();
+  const {
+    activeTab,
+    clearAllExpenses,
+    expenses,
+    openAddModal,
+    isCloudModalOpen,
+    closeCloudModal,
+  } = useExpense();
 
   const renderActiveView = () => {
     switch (activeTab) {
@@ -25,6 +35,8 @@ const MainAppContent: React.FC = () => {
         return <CategoryWiseView />;
       case 'where-how':
         return <WhereHowView />;
+      case 'lending':
+        return <LendingView />;
       case 'transactions':
         return <TransactionList />;
       default:
@@ -39,8 +51,8 @@ const MainAppContent: React.FC = () => {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6">
-        {/* Universal Filter and Search Bar */}
-        <FilterBar />
+        {/* Universal Filter and Search Bar (shown on expense views) */}
+        {activeTab !== 'lending' && <FilterBar />}
 
         {/* Tab Content */}
         {renderActiveView()}
@@ -64,11 +76,17 @@ const MainAppContent: React.FC = () => {
       {/* Set Total Money / Budget Modal */}
       <BudgetModal />
 
+      {/* Money Lending to Friends Modal */}
+      <LendingModal />
+
+      {/* Firebase Cloud Sync Configuration Modal */}
+      <FirebaseConfigModal isOpen={isCloudModalOpen} onClose={closeCloudModal} />
+
       {/* Footer */}
       <footer className="border-t border-slate-200 bg-white py-4 sm:py-6 mt-8 sm:mt-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-3">
           <div className="flex items-center gap-1.5 text-center sm:text-left text-[11px] sm:text-xs">
-            <span>ExpenseTracker • Rupee (₹) daily &amp; category budgeting</span>
+            <span>ExpenseTracker • Rupee (₹) multi-account budgeting &amp; friends lending tracker</span>
           </div>
 
           <div className="flex items-center space-x-4 text-[11px] sm:text-xs">

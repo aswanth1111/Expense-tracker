@@ -1,65 +1,117 @@
 import React, { useState, useEffect } from 'react';
-import { X, Wallet, Check, Trash2 } from 'lucide-react';
+import {
+  X,
+  Wallet,
+  Check,
+  PlusCircle,
+  Pencil,
+  ArrowRight,
+  TrendingUp,
+} from 'lucide-react';
 import { useExpense } from '../context/ExpenseContext';
+import { PAYMENT_METHOD_LIST } from '../constants/categories';
+import type { PaymentMethod, AccountBalances } from '../types/expense';
+import { PaymentIcon } from './PaymentIcon';
+import { formatCurrency } from '../utils/formatters';
 
 export const BudgetModal: React.FC = () => {
   const {
     isBudgetModalOpen,
     closeBudgetModal,
-    totalMoney,
-    setTotalMoney,
+    accountBalances,
+    setAccountBalances,
+    addMoneyToAccount,
+    budgetModalMode,
+    budgetModalAccount,
+    summaryStats,
   } = useExpense();
 
-  const [inputVal, setInputVal] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<'add' | 'set'>('add');
 
-  const quickAmounts = [5000, 10000, 25000, 50000, 100000];
+  // Add Money state
+  const [selectedAccount, setSelectedAccount] = useState<PaymentMethod>('upi_kotak');
+  const [addAmount, setAddAmount] = useState<string>('');
+
+  // Set Balances state
+  const [cashVal, setCashVal] = useState<string>('');
+  const [kotakVal, setKotakVal] = useState<string>('');
+  const [unionVal, setUnionVal] = useState<string>('');
+
+  const quickAddChips = [500, 1000, 2000, 5000, 10000, 25000, 50000];
 
   useEffect(() => {
     if (isBudgetModalOpen) {
-      setInputVal(totalMoney > 0 ? String(totalMoney) : '');
+      setActiveTab(budgetModalMode);
+      if (budgetModalAccount !== 'all') {
+        setSelectedAccount(budgetModalAccount);
+      }
+
+      setAddAmount('');
+      setCashVal(accountBalances.cash > 0 ? String(accountBalances.cash) : '');
+      setKotakVal(accountBalances.upi_kotak > 0 ? String(accountBalances.upi_kotak) : '');
+      setUnionVal(accountBalances.upi_union > 0 ? String(accountBalances.upi_union) : '');
     }
-  }, [isBudgetModalOpen, totalMoney]);
+  }, [isBudgetModalOpen, budgetModalMode, budgetModalAccount, accountBalances]);
 
   if (!isBudgetModalOpen) return null;
 
+  const parsedAdd = parseFloat(addAmount) || 0;
+  const currentAccBalance = summaryStats.accounts[selectedAccount]?.balance || 0;
+  const newAccBalance = currentAccBalance + parsedAdd;
+  const newGrandTotal = summaryStats.remainingBalance + parsedAdd;
+
+  const totalCalculated =
+    (parseFloat(cashVal) || 0) + (parseFloat(kotakVal) || 0) + (parseFloat(unionVal) || 0);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const parsed = parseFloat(inputVal);
-    if (isNaN(parsed) || parsed < 0) {
-      alert('Please enter a valid amount.');
-      return;
-    }
-    setTotalMoney(parsed);
-    closeBudgetModal();
-  };
 
-  const handleClear = () => {
-    if (confirm('Clear your Total Money budget?')) {
-      setTotalMoney(0);
-      setInputVal('');
+    if (activeTab === 'add') {
+      if (parsedAdd <= 0) {
+        alert('Please enter an amount greater than 0 to add.');
+        return;
+      }
+      addMoneyToAccount(selectedAccount, parsedAdd);
+      closeBudgetModal();
+    } else {
+      const newBalances: AccountBalances = {
+        cash: Math.max(0, parseFloat(cashVal) || 0),
+        upi_kotak: Math.max(0, parseFloat(kotakVal) || 0),
+        upi_union: Math.max(0, parseFloat(unionVal) || 0),
+      };
+      setAccountBalances(newBalances);
       closeBudgetModal();
     }
   };
 
+  const handleAddChipClick = (amount: number) => {
+    const cur = parseFloat(addAmount) || 0;
+    setAddAmount(String(cur + amount));
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/50 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200">
-      <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md overflow-hidden animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200">
+      <div className="bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg overflow-hidden max-h-[92vh] flex flex-col animate-in slide-in-from-bottom-8 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200">
         
         {/* Mobile Drag Indicator */}
         <div className="w-10 h-1 bg-slate-300 rounded-full mx-auto my-2 sm:hidden shrink-0" />
 
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/50">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/50 shrink-0">
           <div className="flex items-center space-x-2.5">
-            <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600">
-              <Wallet className="w-5 h-5" />
+            <div className={`p-2 rounded-xl ${activeTab === 'add' ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600'}`}>
+              {activeTab === 'add' ? (
+                <PlusCircle className="w-5 h-5" />
+              ) : (
+                <Wallet className="w-5 h-5" />
+              )}
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-bold text-slate-900">
-                Set Total Money
+                {activeTab === 'add' ? 'Add Money to Account' : 'Set Account Balances'}
               </h2>
               <p className="text-[11px] sm:text-xs text-slate-500">
-                Your total available balance or monthly salary
+                Manage your Cash, UPI (Kotak), and UPI (Union) funds
               </p>
             </div>
           </div>
@@ -71,78 +123,284 @@ export const BudgetModal: React.FC = () => {
           </button>
         </div>
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-              Total Available Money (₹)
-            </label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-slate-400">
-                ₹
-              </span>
-              <input
-                type="number"
-                inputMode="decimal"
-                step="any"
-                min="0"
-                required
-                value={inputVal}
-                onChange={(e) => setInputVal(e.target.value)}
-                placeholder="e.g. 50000"
-                className="w-full text-2xl font-bold pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-900 placeholder:text-slate-300"
-                autoFocus
-              />
-            </div>
-
-            {/* Quick chips */}
-            <div className="flex flex-wrap gap-1.5 mt-2.5">
-              {quickAmounts.map((q) => (
-                <button
-                  key={q}
-                  type="button"
-                  onClick={() => setInputVal(String(q))}
-                  className="text-xs px-2.5 py-1 rounded-md bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 font-medium transition-colors cursor-pointer"
-                >
-                  ₹{q.toLocaleString('en-IN')}
-                </button>
-              ))}
-            </div>
+        {/* Mode Selector Tabs */}
+        <div className="p-4 sm:p-5 pb-0 shrink-0">
+          <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-xl">
+            <button
+              type="button"
+              onClick={() => setActiveTab('add')}
+              className={`flex items-center justify-center gap-1.5 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all cursor-pointer ${
+                activeTab === 'add'
+                  ? 'bg-white text-emerald-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>Add Money (+)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('set')}
+              className={`flex items-center justify-center gap-1.5 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all cursor-pointer ${
+                activeTab === 'set'
+                  ? 'bg-white text-indigo-700 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Pencil className="w-4 h-4" />
+              <span>Set Balances</span>
+            </button>
           </div>
+        </div>
 
-          <p className="text-xs text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-            💡 As you enter each expense, we will automatically deduct it and show your <strong>exact amount left</strong>.
-          </p>
+        {/* Form Body */}
+        <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1">
+          
+          {/* TAB 1: ADD MONEY TO AN ACCOUNT */}
+          {activeTab === 'add' ? (
+            <div className="space-y-4">
+              {/* Account Picker */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Choose Account to Add Money Into *
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {PAYMENT_METHOD_LIST.map((method) => {
+                    const isSelected = selectedAccount === method.id;
+                    const acc = summaryStats.accounts[method.id];
+                    return (
+                      <button
+                        key={method.id}
+                        type="button"
+                        onClick={() => setSelectedAccount(method.id)}
+                        className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center ${
+                          isSelected
+                            ? 'border-emerald-500 bg-emerald-50/70 text-emerald-900 ring-2 ring-emerald-500/20 shadow-xs'
+                            : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                        }`}
+                      >
+                        <PaymentIcon method={method.id} className="w-5 h-5 mb-1" />
+                        <span className="text-xs font-bold truncate w-full">{method.name}</span>
+                        <span className="text-[10px] text-slate-500 font-medium mt-0.5">
+                          Left: {formatCurrency(acc?.balance || 0)}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Amount to Add */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Amount to Add (₹)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-2xl font-bold text-emerald-600">
+                    +₹
+                  </span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    step="any"
+                    min="1"
+                    required
+                    value={addAmount}
+                    onChange={(e) => setAddAmount(e.target.value)}
+                    placeholder="e.g. 10000"
+                    className="w-full text-2xl font-bold pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-slate-900 placeholder:text-slate-300"
+                    autoFocus
+                  />
+                </div>
+
+                {/* Quick Add Chips */}
+                <div className="mt-2.5">
+                  <span className="text-[10px] text-slate-400 font-medium block mb-1">
+                    Tap to add amount:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {quickAddChips.map((q) => (
+                      <button
+                        key={q}
+                        type="button"
+                        onClick={() => handleAddChipClick(q)}
+                        className="text-xs px-2.5 py-1 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold border border-emerald-200/50 transition-colors cursor-pointer"
+                      >
+                        +₹{q.toLocaleString('en-IN')}
+                      </button>
+                    ))}
+                    {addAmount && (
+                      <button
+                        type="button"
+                        onClick={() => setAddAmount('')}
+                        className="text-xs px-2 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors cursor-pointer"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Real-time Calculation Preview */}
+              {parsedAdd > 0 && (
+                <div className="p-3 bg-gradient-to-r from-emerald-50 to-teal-50/50 rounded-xl border border-emerald-200/70 space-y-1.5 animate-in fade-in">
+                  <div className="flex items-center justify-between text-xs text-slate-600 font-medium">
+                    <span>
+                      {selectedAccount === 'cash'
+                        ? 'Cash Balance:'
+                        : selectedAccount === 'upi_kotak'
+                        ? 'UPI Kotak Balance:'
+                        : 'UPI Union Balance:'}
+                    </span>
+                    <span className="flex items-center gap-1 font-bold text-slate-900">
+                      {formatCurrency(currentAccBalance)}
+                      <ArrowRight className="w-3 h-3 text-emerald-600" />
+                      <span className="text-emerald-700 text-sm font-black">{formatCurrency(newAccBalance)}</span>
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-slate-600 font-medium pt-1 border-t border-emerald-200/50">
+                    <span>New Total Available Across All Accounts:</span>
+                    <span className="font-bold text-emerald-700 flex items-center gap-1">
+                      <TrendingUp className="w-3.5 h-3.5" />
+                      {formatCurrency(newGrandTotal)}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* TAB 2: SET BASELINE BALANCES FOR EACH ACCOUNT */
+            <div className="space-y-3.5">
+              <p className="text-xs text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                💡 Enter the money you currently have in each of your 3 accounts. As you spend or lend, it will reduce from that specific account.
+              </p>
+
+              {/* 1. Cash */}
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
+                    <PaymentIcon method="cash" className="w-4 h-4" />
+                    <span>1. Cash in Hand (₹)</span>
+                  </label>
+                  <span className="text-[11px] text-slate-400">
+                    Spent: {formatCurrency(summaryStats.accounts.cash.spent)}
+                  </span>
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">
+                    ₹
+                  </span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    step="any"
+                    min="0"
+                    value={cashVal}
+                    onChange={(e) => setCashVal(e.target.value)}
+                    placeholder="0"
+                    className="w-full text-base font-bold pl-7 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-emerald-500 text-slate-800"
+                  />
+                </div>
+              </div>
+
+              {/* 2. UPI (Kotak) */}
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-red-800 flex items-center gap-1.5">
+                    <PaymentIcon method="upi_kotak" className="w-4 h-4" />
+                    <span>2. UPI - Kotak Bank (₹)</span>
+                  </label>
+                  <span className="text-[11px] text-slate-400">
+                    Spent: {formatCurrency(summaryStats.accounts.upi_kotak.spent)}
+                  </span>
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">
+                    ₹
+                  </span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    step="any"
+                    min="0"
+                    value={kotakVal}
+                    onChange={(e) => setKotakVal(e.target.value)}
+                    placeholder="0"
+                    className="w-full text-base font-bold pl-7 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-red-500 text-slate-800"
+                  />
+                </div>
+              </div>
+
+              {/* 3. UPI (Union) */}
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-blue-800 flex items-center gap-1.5">
+                    <PaymentIcon method="upi_union" className="w-4 h-4" />
+                    <span>3. UPI - Union Bank (₹)</span>
+                  </label>
+                  <span className="text-[11px] text-slate-400">
+                    Spent: {formatCurrency(summaryStats.accounts.upi_union.spent)}
+                  </span>
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">
+                    ₹
+                  </span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    step="any"
+                    min="0"
+                    value={unionVal}
+                    onChange={(e) => setUnionVal(e.target.value)}
+                    placeholder="0"
+                    className="w-full text-base font-bold pl-7 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-blue-500 text-slate-800"
+                  />
+                </div>
+              </div>
+
+              {/* Combined Total Preview */}
+              <div className="p-3 bg-indigo-50/70 rounded-xl border border-indigo-100 flex items-center justify-between text-xs">
+                <span className="font-semibold text-indigo-900">Total Across All 3 Accounts:</span>
+                <span className="text-base font-black text-indigo-700">{formatCurrency(totalCalculated)}</span>
+              </div>
+            </div>
+          )}
 
           {/* Footer Actions */}
-          <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-            {totalMoney > 0 ? (
-              <button
-                type="button"
-                onClick={handleClear}
-                className="flex items-center gap-1 text-xs text-rose-500 hover:text-rose-700 font-medium cursor-pointer"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                Reset
-              </button>
-            ) : <div />}
-
-            <div className="flex items-center space-x-2">
-              <button
-                type="button"
-                onClick={closeBudgetModal}
-                className="px-4 py-2 text-xs sm:text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="inline-flex items-center gap-1.5 px-5 py-2 text-xs sm:text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm shadow-indigo-200 transition-colors cursor-pointer"
-              >
-                <Check className="w-4 h-4" />
-                Save Total Money
-              </button>
-            </div>
+          <div className="flex items-center justify-end space-x-2 pt-3 border-t border-slate-100 shrink-0">
+            <button
+              type="button"
+              onClick={closeBudgetModal}
+              className="px-4 py-2 text-xs sm:text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className={`inline-flex items-center gap-1.5 px-5 py-2 text-xs sm:text-sm font-semibold text-white rounded-xl shadow-xs transition-colors cursor-pointer ${
+                activeTab === 'add'
+                  ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-200'
+                  : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200'
+              }`}
+            >
+              {activeTab === 'add' ? (
+                <>
+                  <PlusCircle className="w-4 h-4" />
+                  <span>
+                    {parsedAdd > 0
+                      ? `Add ${formatCurrency(parsedAdd)}`
+                      : 'Add Money'}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4" />
+                  <span>Save Balances</span>
+                </>
+              )}
+            </button>
           </div>
         </form>
       </div>

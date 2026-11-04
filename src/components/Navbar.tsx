@@ -9,10 +9,12 @@ import {
   ListOrdered,
   IndianRupee,
   Wallet,
+  HandCoins,
 } from 'lucide-react';
 import { useExpense } from '../context/ExpenseContext';
 import type { ActiveTab } from '../context/ExpenseContext';
 import { formatCurrency } from '../utils/formatters';
+import { CloudSyncIndicator } from './CloudSyncIndicator';
 
 export const Navbar: React.FC = () => {
   const {
@@ -24,11 +26,25 @@ export const Navbar: React.FC = () => {
     setActiveTab,
   } = useExpense();
 
-  const navTabs: { id: ActiveTab; label: string; icon: React.ReactNode }[] = [
+  const navTabs: {
+    id: ActiveTab;
+    label: string;
+    icon: React.ReactNode;
+    badge?: number;
+  }[] = [
     { id: 'overview', label: 'Overview', icon: <LayoutDashboard className="w-4 h-4" /> },
     { id: 'day-by-day', label: 'Day by Day', icon: <CalendarDays className="w-4 h-4" /> },
     { id: 'category-wise', label: 'Category Wise', icon: <PieChart className="w-4 h-4" /> },
     { id: 'where-how', label: 'Where & How', icon: <MapPin className="w-4 h-4" /> },
+    {
+      id: 'lending',
+      label: 'Lending (Friends)',
+      icon: <HandCoins className="w-4 h-4" />,
+      badge:
+        summaryStats.lendingSummary.activeLoansCount > 0
+          ? summaryStats.lendingSummary.activeLoansCount
+          : undefined,
+    },
     { id: 'transactions', label: 'All Expenses', icon: <ListOrdered className="w-4 h-4" /> },
   ];
 
@@ -57,13 +73,16 @@ export const Navbar: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Actions: Total Money pill + Add Expense button */}
+          {/* Right Actions: Cloud Sync + Total Money pill + Add Expense button */}
           <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
+            {/* Cloud Sync Status Indicator */}
+            <CloudSyncIndicator />
+
             {/* Total Money button */}
             <button
-              onClick={openBudgetModal}
+              onClick={() => openBudgetModal('add')}
               className="inline-flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-2 text-[11px] sm:text-xs font-semibold rounded-lg border border-slate-200 hover:border-indigo-200 bg-slate-50 hover:bg-indigo-50/60 text-slate-700 transition-colors cursor-pointer"
-              title="Set or Edit Total Available Money"
+              title="Add money or edit your account balances"
             >
               <Wallet className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
               {totalMoney > 0 ? (
@@ -74,7 +93,7 @@ export const Navbar: React.FC = () => {
                   </strong>
                 </span>
               ) : (
-                <span>Total Money</span>
+                <span>Set Balances</span>
               )}
             </button>
 
@@ -108,6 +127,11 @@ export const Navbar: React.FC = () => {
               >
                 {tab.icon}
                 <span>{tab.label}</span>
+                {tab.badge !== undefined && (
+                  <span className="ml-0.5 px-1.5 py-0.2 bg-amber-500 text-white rounded-full text-[10px] font-bold">
+                    {tab.badge}
+                  </span>
+                )}
               </button>
             );
           })}

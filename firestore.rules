@@ -1,0 +1,218 @@
+rules_version = '2';
+
+// ===============================================================
+// Expense Tracker Firestore Security Rules
+// Project ID: expense-tracker-accb7
+// ===============================================================
+//
+// Assumed Data Model
+// ===============================================================
+//
+// This security rules file assumes the following data structures:
+//
+// Collection: expenses
+// Document ID: {expenseId}
+// Fields:
+//   - id: string (required, 1-100 chars, matches document ID, immutable)
+//   - amount: number (required, > 0, <= 1,000,000,000)
+//   - reason: string (required, 1-500 chars)
+//   - category: string (required, 1-50 chars)
+//   - paymentMethod: string (required, 'cash' | 'upi_kotak' | 'upi_union')
+//   - merchant: string (required, 0-150 chars)
+//   - date: string (required, 8-35 chars, format YYYY-MM-DD...)
+//   - createdAt: number (required, > 0, immutable)
+//
+// Collection: settings
+// Document ID: budget
+// Fields:
+//   - balances: map (required, keys: 'cash', 'upi_kotak', 'upi_union', each number >= 0)
+//   - totalMoney: number (required, >= 0, <= 30,000,000,000)
+//   - updatedAt: number (required, > 0)
+//
+// Collection: lending
+// Document ID: {loanId}
+// Fields:
+//   - id: string (required, 1-100 chars, matches document ID, immutable)
+//   - friendName: string (required, 1-100 chars)
+//   - amount: number (required, > 0, <= 1,000,000,000)
+//   - account: string (required, 'cash' | 'upi_kotak' | 'upi_union')
+//   - date: string (required, 8-35 chars, format YYYY-MM-DD...)
+//   - notes: string (optional, 0-500 chars)
+//   - status: string (required, 'pending' | 'settled')
+//   - settledDate: string (optional, 8-35 chars, format YYYY-MM-DD...)
+//   - createdAt: number (required, > 0, immutable)
+//
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Default Deny Rule
+    // ===============================================================
+    // Deny all reads and writes to unspecified collections by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function validStringLength(text, minLen, maxLen) {
+      return text is string && text.size() >= minLen && text.size() <= maxLen;
+    }
+
+    function isValidOptionalNotes(field) {
+      let data = request.resource.data;
+      return !(field in data) ||
+             data[field] == null ||
+             (data[field] is string && data[field].size() <= 500);
+    }
+
+    function isValidOptionalSettledDate(field) {
+      let data = request.resource.data;
+      return !(field in data) ||
+             data[field] == null ||
+             (data[field] is string &&
+              data[field].size() >= 8 &&
+              data[field].size() <= 35 &&
+              data[field].matches('^\\d{4}-\\d{2}-\\d{2}.*'));
+    }
+
+    // ===============================================================
+    // Domain Validators: Expenses
+    // ===============================================================
+
+    function isValidExpense(expenseId) {
+      let data = request.resource.data;
+      return hasRequiredFields([
+               'id', 'amount', 'reason', 'category',
+               'paymentMethod', 'merchant', 'date', 'createdAt'
+             ]) &&
+             hasOnlyAllowedFields([
+               'id', 'amount', 'reason', 'category',
+               'paymentMethod', 'merchant', 'date', 'createdAt'
+             ]) &&
+             validStringLength(data.id, 1, 100) &&
+             data.id == expenseId &&
+             data.amount is number &&
+             data.amount > 0 &&
+             data.amount <= 1000000000 &&
+             validStringLength(data.reason, 1, 500) &&
+             validStringLength(data.category, 1, 50) &&
+             data.paymentMethod is string &&
+             data.paymentMethod in ['cash', 'upi_kotak', 'upi_union'] &&
+             data.merchant is string &&
+             data.merchant.size() <= 150 &&
+             validStringLength(data.date, 8, 35) &&
+             data.date.matches('^\\d{4}-\\d{2}-\\d{2}.*') &&
+             data.createdAt is number &&
+             data.createdAt > 0;
+    }
+
+    function isValidExpenseUpdate(expenseId) {
+      return isValidExpense(expenseId) &&
+             request.resource.data.id == resource.data.id &&
+             request.resource.data.createdAt == resource.data.createdAt;
+    }
+
+    // ===============================================================
+    // Domain Validators: Budget & Multi-Account Balances
+    // ===============================================================
+
+    function isValidBudget() {
+      let data = request.resource.data;
+      return hasRequiredFields(['balances', 'totalMoney', 'updatedAt']) &&
+             hasOnlyAllowedFields(['balances', 'totalMoney', 'updatedAt']) &&
+             data.balances is map &&
+             data.balances.keys().hasAll(['cash', 'upi_kotak', 'upi_union']) &&
+             data.balances.keys().hasOnly(['cash', 'upi_kotak', 'upi_union']) &&
+             data.balances.cash is number &&
+             data.balances.cash >= 0 &&
+             data.balances.cash <= 10000000000 &&
+             data.balances.upi_kotak is number &&
+             data.balances.upi_kotak >= 0 &&
+             data.balances.upi_kotak <= 10000000000 &&
+             data.balances.upi_union is number &&
+             data.balances.upi_union >= 0 &&
+             data.balances.upi_union <= 10000000000 &&
+             data.totalMoney is number &&
+             data.totalMoney >= 0 &&
+             data.totalMoney <= 30000000000 &&
+             data.updatedAt is number &&
+             data.updatedAt > 0;
+    }
+
+    // ===============================================================
+    // Domain Validators: Lending Money to Friends
+    // ===============================================================
+
+    function isValidLending(loanId) {
+      let data = request.resource.data;
+      return hasRequiredFields([
+               'id', 'friendName', 'amount', 'account', 'date', 'status', 'createdAt'
+             ]) &&
+             hasOnlyAllowedFields([
+               'id', 'friendName', 'amount', 'account', 'date', 'notes', 'status', 'settledDate', 'createdAt'
+             ]) &&
+             validStringLength(data.id, 1, 100) &&
+             data.id == loanId &&
+             validStringLength(data.friendName, 1, 100) &&
+             data.amount is number &&
+             data.amount > 0 &&
+             data.amount <= 1000000000 &&
+             data.account is string &&
+             data.account in ['cash', 'upi_kotak', 'upi_union'] &&
+             validStringLength(data.date, 8, 35) &&
+             data.date.matches('^\\d{4}-\\d{2}-\\d{2}.*') &&
+             isValidOptionalNotes('notes') &&
+             data.status is string &&
+             data.status in ['pending', 'settled'] &&
+             isValidOptionalSettledDate('settledDate') &&
+             data.createdAt is number &&
+             data.createdAt > 0;
+    }
+
+    function isValidLendingUpdate(loanId) {
+      return isValidLending(loanId) &&
+             request.resource.data.id == resource.data.id &&
+             request.resource.data.createdAt == resource.data.createdAt;
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    // Expenses collection: records each individual expense
+    match /expenses/{expenseId} {
+      allow read: if true;
+      allow create: if isValidExpense(expenseId);
+      allow update: if isValidExpenseUpdate(expenseId);
+      allow delete: if true;
+    }
+
+    // Settings collection: tracks multi-account budget and balances
+    match /settings/{settingId} {
+      allow read: if settingId == 'budget';
+      allow create, update: if settingId == 'budget' && isValidBudget();
+      allow delete: if false;
+    }
+
+    // Lending collection: tracks money lent to friends and repayment status
+    match /lending/{loanId} {
+      allow read: if true;
+      allow create: if isValidLending(loanId);
+      allow update: if isValidLendingUpdate(loanId);
+      allow delete: if true;
+    }
+  }
+}

@@ -7,6 +7,8 @@ import type {
   CategoryId,
   PaymentMethod,
   SummaryStats,
+  AccountBalances,
+  LendingRecord,
 } from '../types/expense';
 import { CATEGORIES, PAYMENT_METHODS } from '../constants/categories';
 import {
@@ -222,7 +224,17 @@ export const computeHowSpending = (expenses: Expense[]): WhereHowSpending[] => {
   return list.sort((a, b) => b.total - a.total);
 };
 
-export const computeSummaryStats = (expenses: Expense[], totalMoney: number = 0): SummaryStats => {
+export const computeSummaryStats = (
+  expenses: Expense[],
+  accountBalancesInput: AccountBalances | number = { cash: 0, upi_kotak: 0, upi_union: 0 },
+  lendingRecords: LendingRecord[] = []
+): SummaryStats => {
+  // Normalize input if legacy number passed
+  const accountBalances: AccountBalances =
+    typeof accountBalancesInput === 'number'
+      ? { cash: 0, upi_kotak: accountBalancesInput, upi_union: 0 }
+      : accountBalancesInput || { cash: 0, upi_kotak: 0, upi_union: 0 };
+
   const totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
   const transactionCount = expenses.length;
 
@@ -252,8 +264,72 @@ export const computeSummaryStats = (expenses: Expense[], totalMoney: number = 0)
       ? whereGroups[1]
       : null;
 
-  const remainingBalance = totalMoney - totalSpent;
-  const spentPercentage = totalMoney > 0 ? Number(((totalSpent / totalMoney) * 100).toFixed(1)) : 0;
+  // Account spending calculation
+  const spentByAccount: Record<PaymentMethod, number> = {
+    cash: 0,
+    upi_kotak: 0,
+    upi_union: 0,
+  };
+  expenses.forEach((e) => {
+    if (spentByAccount[e.paymentMethod] !== undefined) {
+      spentByAccount[e.paymentMethod] += e.amount;
+    }
+  });
+
+  // Lending calculations per account and total
+  const lentPendingByAccount: Record<PaymentMethod, number> = {
+    cash: 0,
+    upi_kotak: 0,
+    upi_union: 0,
+  };
+  let totalLentPending = 0;
+  let totalSettled = 0;
+  let activeLoansCount = 0;
+  let settledLoansCount = 0;
+
+  lendingRecords.forEach((loan) => {
+    if (loan.status === 'pending') {
+      totalLentPending += loan.amount;
+      activeLoansCount += 1;
+      if (lentPendingByAccount[loan.account] !== undefined) {
+        lentPendingByAccount[loan.account] += loan.amount;
+      }
+    } else if (loan.status === 'settled') {
+      totalSettled += loan.amount;
+      settledLoansCount += 1;
+    }
+  });
+
+  const cashDetail = {
+    id: 'cash' as PaymentMethod,
+    name: 'Cash',
+    totalMoney: accountBalances.cash,
+    spent: spentByAccount.cash,
+    lent: lentPendingByAccount.cash,
+    balance: accountBalances.cash - spentByAccount.cash - lentPendingByAccount.cash,
+  };
+
+  const kotakDetail = {
+    id: 'upi_kotak' as PaymentMethod,
+    name: 'UPI (Kotak)',
+    totalMoney: accountBalances.upi_kotak,
+    spent: spentByAccount.upi_kotak,
+    lent: lentPendingByAccount.upi_kotak,
+    balance: accountBalances.upi_kotak - spentByAccount.upi_kotak - lentPendingByAccount.upi_kotak,
+  };
+
+  const unionDetail = {
+    id: 'upi_union' as PaymentMethod,
+    name: 'UPI (Union)',
+    totalMoney: accountBalances.upi_union,
+    spent: spentByAccount.upi_union,
+    lent: lentPendingByAccount.upi_union,
+    balance: accountBalances.upi_union - spentByAccount.upi_union - lentPendingByAccount.upi_union,
+  };
+
+  const grandTotalMoney = accountBalances.cash + accountBalances.upi_kotak + accountBalances.upi_union;
+  const remainingBalance = cashDetail.balance + kotakDetail.balance + unionDetail.balance;
+  const spentPercentage = grandTotalMoney > 0 ? Number(((totalSpent / grandTotalMoney) * 100).toFixed(1)) : 0;
 
   return {
     totalSpent,
@@ -263,8 +339,20 @@ export const computeSummaryStats = (expenses: Expense[], totalMoney: number = 0)
     highestSpendingDay,
     topCategory,
     topMerchant,
-    totalMoney,
+    totalMoney: grandTotalMoney,
     remainingBalance,
     spentPercentage,
+    accountBalances,
+    accounts: {
+      cash: cashDetail,
+      upi_kotak: kotakDetail,
+      upi_union: unionDetail,
+    },
+    lendingSummary: {
+      totalLentPending,
+      totalSettled,
+      activeLoansCount,
+      settledLoansCount,
+    },
   };
 };
