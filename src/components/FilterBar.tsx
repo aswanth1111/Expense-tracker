@@ -41,7 +41,7 @@ export const FilterBar: React.FC = () => {
             value={filters.search}
             onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
             placeholder="Search why you spent, shop, or category..."
-            className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-slate-400"
+            className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-powder-blue focus:border-powder-blue transition-all placeholder:text-slate-400"
           />
           {filters.search && (
             <button
@@ -61,10 +61,10 @@ export const FilterBar: React.FC = () => {
               <button
                 key={opt.id}
                 onClick={() => handleDateFilterChange(opt.id)}
-                className={`px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-medium rounded-lg whitespace-nowrap transition-colors cursor-pointer shrink-0 ${
+                className={`px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs rounded-lg whitespace-nowrap transition-colors cursor-pointer shrink-0 ${
                   isSelected
-                    ? 'bg-indigo-600 text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200/70'
+                    ? 'bg-powder-blue text-slate-950 font-bold border border-[#8ebdbb] shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200/70 font-medium'
                 }`}
               >
                 {opt.label}
@@ -76,14 +76,14 @@ export const FilterBar: React.FC = () => {
 
       {/* Custom Date Range Picker */}
       {filters.dateFilter === 'custom' && (
-        <div className="flex flex-wrap items-center gap-2 p-2 bg-indigo-50/60 rounded-lg sm:rounded-xl border border-indigo-100 text-xs text-indigo-900">
+        <div className="flex flex-wrap items-center gap-2 p-2 bg-powder-blue-light rounded-lg sm:rounded-xl border border-powder-blue/50 text-xs text-slate-900">
           <div className="flex items-center gap-1.5 flex-1 min-w-[130px]">
             <span className="font-semibold text-[11px]">From:</span>
             <input
               type="date"
               value={filters.startDate || ''}
               onChange={(e) => setFilters((prev) => ({ ...prev, startDate: e.target.value }))}
-              className="w-full px-2 py-1 bg-white border border-indigo-200 rounded text-xs outline-none"
+              className="w-full px-2 py-1 bg-white border border-slate-200 rounded text-xs outline-none focus:border-powder-blue"
             />
           </div>
           <div className="flex items-center gap-1.5 flex-1 min-w-[130px]">
@@ -92,7 +92,7 @@ export const FilterBar: React.FC = () => {
               type="date"
               value={filters.endDate || ''}
               onChange={(e) => setFilters((prev) => ({ ...prev, endDate: e.target.value }))}
-              className="w-full px-2 py-1 bg-white border border-indigo-200 rounded text-xs outline-none"
+              className="w-full px-2 py-1 bg-white border border-slate-200 rounded text-xs outline-none focus:border-powder-blue"
             />
           </div>
         </div>
@@ -111,7 +111,7 @@ export const FilterBar: React.FC = () => {
           <select
             value={filters.category}
             onChange={(e) => setFilters((prev) => ({ ...prev, category: e.target.value }))}
-            className="w-full sm:w-auto px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 text-xs font-medium outline-none cursor-pointer hover:border-slate-300 focus:border-indigo-500 transition-colors truncate"
+            className="w-full sm:w-auto px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 text-xs font-medium outline-none cursor-pointer hover:border-slate-300 focus:border-powder-blue transition-colors truncate"
           >
             <option value="all">All Categories</option>
             {CATEGORY_LIST.map((c) => (
@@ -125,7 +125,7 @@ export const FilterBar: React.FC = () => {
           <select
             value={filters.paymentMethod}
             onChange={(e) => setFilters((prev) => ({ ...prev, paymentMethod: e.target.value }))}
-            className="w-full sm:w-auto px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 text-xs font-medium outline-none cursor-pointer hover:border-slate-300 focus:border-indigo-500 transition-colors truncate"
+            className="w-full sm:w-auto px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 text-xs font-medium outline-none cursor-pointer hover:border-slate-300 focus:border-powder-blue transition-colors truncate"
           >
             <option value="all">All Methods</option>
             {PAYMENT_METHOD_LIST.map((p) => (
@@ -148,7 +148,7 @@ export const FilterBar: React.FC = () => {
                   sortBy: e.target.value as ExpenseFilters['sortBy'],
                 }))
               }
-              className="w-full sm:w-auto px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 text-xs font-medium outline-none cursor-pointer hover:border-slate-300 focus:border-indigo-500 transition-colors"
+              className="w-full sm:w-auto px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 text-xs font-medium outline-none cursor-pointer hover:border-slate-300 focus:border-powder-blue transition-colors"
             >
               <option value="date-desc">Newest First</option>
               <option value="date-asc">Oldest First</option>

@@ -93,7 +93,7 @@ export const WhereHowView: React.FC = () => {
                 <div className="flex items-center justify-between mb-1 sm:mb-1.5">
                   <div className="flex items-center space-x-2 truncate mr-2 min-w-0">
                     <span className="text-xs font-bold text-slate-400 w-4 shrink-0">#{idx + 1}</span>
-                    <Smartphone className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                    <Smartphone className="w-3.5 h-3.5 text-slate-700 shrink-0" />
                     <span className="text-xs sm:text-sm font-bold text-slate-800 truncate">
                       {item.name}
                     </span>

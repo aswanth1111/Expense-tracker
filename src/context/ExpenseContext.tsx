@@ -86,13 +86,14 @@ interface ExpenseContextType {
   addExpense: (data: Omit<Expense, 'id' | 'createdAt'>) => void;
   updateExpense: (id: string, data: Partial<Omit<Expense, 'id' | 'createdAt'>>) => void;
   deleteExpense: (id: string) => void;
+  toggleExpenseReturned: (id: string) => void;
   clearAllExpenses: () => void;
 
   // Budget / Balance Actions
   openBudgetModal: (mode?: 'add' | 'set', account?: PaymentMethod) => void;
   closeBudgetModal: () => void;
   setAccountBalances: (balances: AccountBalances) => void;
-  addMoneyToAccount: (account: PaymentMethod, amount: number) => void;
+  addMoneyToAccount: (account: PaymentMethod, amount: number, share?: 'mine' | 'friend') => void;
   setTotalMoney: (amount: number) => void; // Legacy convenience (assigns to Kotak or proportional)
   addMoney: (amount: number) => void;
 
@@ -158,10 +159,21 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const saved = localStorage.getItem(STORAGE_BALANCES_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
+        const rawKotak = Number(parsed.upi_kotak) || 0;
+        let kotakSplit = parsed.kotakSplit;
+        if (!kotakSplit && rawKotak > 0) {
+          kotakSplit = { mine: rawKotak, friend: 0 };
+        }
         return {
           cash: Number(parsed.cash) || 0,
-          upi_kotak: Number(parsed.upi_kotak) || 0,
+          upi_kotak: kotakSplit ? (Number(kotakSplit.mine) || 0) + (Number(kotakSplit.friend) || 0) : rawKotak,
           upi_union: Number(parsed.upi_union) || 0,
+          kotakSplit: kotakSplit
+            ? {
+                mine: Number(kotakSplit.mine) || 0,
+                friend: Number(kotakSplit.friend) || 0,
+              }
+            : undefined,
         };
       }
       // Check legacy single total money
@@ -169,7 +181,12 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (legacy) {
         const legacyVal = parseFloat(legacy);
         if (!isNaN(legacyVal) && legacyVal > 0) {
-          return { cash: 0, upi_kotak: legacyVal, upi_union: 0 };
+          return {
+            cash: 0,
+            upi_kotak: legacyVal,
+            upi_union: 0,
+            kotakSplit: { mine: legacyVal, friend: 0 },
+          };
         }
       }
     } catch (e) {
@@ -269,10 +286,21 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Budget & Balances Actions
   // ----------------------------------------------------
   const setAccountBalances = (newBalances: AccountBalances) => {
+    const rawKotak = Math.max(0, newBalances.upi_kotak);
+    const mine =
+      newBalances.kotakSplit !== undefined
+        ? Math.max(0, newBalances.kotakSplit.mine)
+        : rawKotak;
+    const friend =
+      newBalances.kotakSplit !== undefined
+        ? Math.max(0, newBalances.kotakSplit.friend)
+        : 0;
+
     const clean: AccountBalances = {
       cash: Math.max(0, newBalances.cash),
-      upi_kotak: Math.max(0, newBalances.upi_kotak),
+      upi_kotak: mine + friend,
       upi_union: Math.max(0, newBalances.upi_union),
+      kotakSplit: { mine, friend },
     };
 
     setAccountBalancesState(clean);
@@ -284,13 +312,35 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const addMoneyToAccount = (account: PaymentMethod, amount: number) => {
+  const addMoneyToAccount = (
+    account: PaymentMethod,
+    amount: number,
+    share: 'mine' | 'friend' = 'mine'
+  ) => {
     if (amount <= 0) return;
-    const updated: AccountBalances = {
-      ...accountBalances,
-      [account]: (accountBalances[account] || 0) + amount,
-    };
-    setAccountBalances(updated);
+
+    if (account === 'upi_kotak') {
+      const currentMine = accountBalances.kotakSplit?.mine ?? accountBalances.upi_kotak;
+      const currentFriend = accountBalances.kotakSplit?.friend ?? 0;
+      const updatedMine = share === 'friend' ? currentMine : currentMine + amount;
+      const updatedFriend = share === 'friend' ? currentFriend + amount : currentFriend;
+
+      const updated: AccountBalances = {
+        ...accountBalances,
+        upi_kotak: updatedMine + updatedFriend,
+        kotakSplit: {
+          mine: updatedMine,
+          friend: updatedFriend,
+        },
+      };
+      setAccountBalances(updated);
+    } else {
+      const updated: AccountBalances = {
+        ...accountBalances,
+        [account]: (accountBalances[account] || 0) + amount,
+      };
+      setAccountBalances(updated);
+    }
   };
 
   // Legacy convenience for single total money
@@ -340,6 +390,7 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
       ...data,
       id,
       friendName: data.friendName.trim(),
+      lentBy: data.lentBy || 'mine',
       notes: data.notes || '',
       status: data.status || 'pending',
       createdAt: Date.now(),
@@ -436,6 +487,10 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const newExpense: Expense = {
       ...data,
       id,
+      paidBy: data.paidBy || 'mine',
+      spentForOther: Boolean(data.spentForOther),
+      isReturned: Boolean(data.isReturned),
+      returnedAt: data.returnedAt || undefined,
       merchant: data.merchant || '',
       createdAt: Date.now(),
     };
@@ -464,11 +519,91 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   const deleteExpense = (id: string) => {
+    const target = expenses.find((item) => item.id === id);
+
+    // If an expense is deleted, that money was spent in real life and is gone forever!
+    // To ensure deleting the record does NOT add the money back to the total / available balance:
+    if (target && !(target.spentForOther && target.isReturned)) {
+      setAccountBalancesState((prev) => {
+        let updatedCash = prev.cash;
+        let updatedUnion = prev.upi_union;
+        let updatedMine = prev.kotakSplit?.mine ?? prev.upi_kotak;
+        let updatedFriend = prev.kotakSplit?.friend ?? 0;
+
+        if (target.paymentMethod === 'cash') {
+          updatedCash = Math.max(0, updatedCash - target.amount);
+        } else if (target.paymentMethod === 'upi_union') {
+          updatedUnion = Math.max(0, updatedUnion - target.amount);
+        } else if (target.paymentMethod === 'upi_kotak') {
+          if (target.paidBy === 'friend') {
+            updatedFriend = Math.max(0, updatedFriend - target.amount);
+          } else {
+            updatedMine = Math.max(0, updatedMine - target.amount);
+          }
+        }
+
+        const newBalances: AccountBalances = {
+          cash: updatedCash,
+          upi_kotak: updatedMine + updatedFriend,
+          upi_union: updatedUnion,
+          kotakSplit: {
+            mine: updatedMine,
+            friend: updatedFriend,
+          },
+        };
+
+        try {
+          localStorage.setItem(STORAGE_BALANCES_KEY, JSON.stringify(newBalances));
+        } catch (err) {
+          console.error('Failed to save balances to localStorage on delete:', err);
+        }
+
+        if (isCloudConnected) {
+          setBalancesInFirestore(newBalances).catch((err) => {
+            console.error('Failed to sync adjusted balances on delete:', err);
+          });
+        }
+
+        return newBalances;
+      });
+    }
+
     setExpenses((prev) => prev.filter((item) => item.id !== id));
 
     if (isCloudConnected) {
       deleteExpenseFromFirestore(id).catch((err) => {
         console.error('Failed to delete expense in Firestore:', err);
+      });
+    }
+  };
+
+  const toggleExpenseReturned = (id: string) => {
+    const target = expenses.find((item) => item.id === id);
+    if (!target) return;
+
+    const nextReturned = !target.isReturned;
+    const now = Date.now();
+
+    // 1. Update local state immediately so user sees the change right away!
+    setExpenses((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              isReturned: nextReturned,
+              returnedAt: nextReturned ? now : undefined,
+            }
+          : item
+      )
+    );
+
+    // 2. Sync to Firestore
+    if (isCloudConnected) {
+      updateExpenseInFirestore(id, {
+        isReturned: nextReturned,
+        returnedAt: nextReturned ? now : undefined,
+      }).catch((err) => {
+        console.error('Failed to toggle expense return status in Firestore:', err);
       });
     }
   };
@@ -557,6 +692,7 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
         addExpense,
         updateExpense,
         deleteExpense,
+        toggleExpenseReturned,
         clearAllExpenses,
         openBudgetModal,
         closeBudgetModal,

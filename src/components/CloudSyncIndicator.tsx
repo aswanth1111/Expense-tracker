@@ -12,7 +12,7 @@ export const CloudSyncIndicator: React.FC = () => {
       className={`inline-flex items-center gap-1.5 px-2 py-1.5 sm:px-2.5 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold transition-all cursor-pointer border ${
         isCloudConnected
           ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80 hover:bg-emerald-100/80'
-          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-indigo-50/70 hover:text-indigo-600 hover:border-indigo-200'
+          : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-powder-blue/20 hover:text-slate-900 hover:border-powder-blue'
       }`}
       title={
         isCloudConnected

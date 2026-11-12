@@ -7,6 +7,9 @@ import {
   MapPin,
   Sparkles,
   Inbox,
+  CheckCircle2,
+  RotateCcw,
+  Users,
 } from 'lucide-react';
 import { useExpense } from '../context/ExpenseContext';
 import { CATEGORIES, PAYMENT_METHODS } from '../constants/categories';
@@ -19,6 +22,7 @@ export const TransactionList: React.FC = () => {
     filteredExpenses,
     openEditModal,
     deleteExpense,
+    toggleExpenseReturned,
     openAddModal,
   } = useExpense();
 
@@ -34,7 +38,7 @@ export const TransactionList: React.FC = () => {
         </p>
         <button
           onClick={openAddModal}
-          className="mt-4 sm:mt-5 inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold hover:bg-indigo-700 transition-colors cursor-pointer"
+          className="mt-4 sm:mt-5 inline-flex items-center gap-2 px-4 py-2 bg-powder-blue hover:bg-powder-blue-hover active:bg-[#8ebdbb] text-slate-950 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold border border-[#8ebdbb] shadow-xs shadow-powder-glow transition-all cursor-pointer"
         >
           <Sparkles className="w-4 h-4" />
           Add Expense
@@ -115,6 +119,18 @@ export const TransactionList: React.FC = () => {
                     <span>{pm.name}</span>
                   </span>
 
+                  {exp.paymentMethod === 'upi_kotak' && (
+                    <span
+                      className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded border font-bold text-[10px] ${
+                        exp.paidBy === 'friend'
+                          ? 'bg-red-50 text-red-700 border-red-200'
+                          : 'bg-powder-blue-light text-slate-800 border-powder-blue/60'
+                      }`}
+                    >
+                      {exp.paidBy === 'friend' ? '👥 Friend' : '👤 Mine'}
+                    </span>
+                  )}
+
                   {exp.merchant && (
                     <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-medium">
                       <MapPin className="w-2.5 h-2.5 text-slate-400" />
@@ -126,7 +142,7 @@ export const TransactionList: React.FC = () => {
                 <div className="flex items-center space-x-1 shrink-0 ml-2">
                   <button
                     onClick={() => openEditModal(exp)}
-                    className="p-1.5 text-slate-400 hover:text-indigo-600 active:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                    className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-powder-blue/30 rounded-lg transition-colors cursor-pointer"
                     title="Edit"
                   >
                     <Pencil className="w-3.5 h-3.5" />
@@ -144,6 +160,38 @@ export const TransactionList: React.FC = () => {
                   </button>
                 </div>
               </div>
+
+              {/* Spent for Other & Return status button (Mobile Card) */}
+              {exp.spentForOther && (
+                <div className="pt-1.5 mt-1 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-[10px] font-semibold text-slate-500 flex items-center gap-1">
+                    <Users className="w-3 h-3 text-amber-600" />
+                    <span>Spent for other:</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => toggleExpenseReturned(exp.id)}
+                    className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border text-[10px] font-bold transition-all cursor-pointer ${
+                      exp.isReturned
+                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100 shadow-2xs'
+                        : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100 shadow-2xs active:scale-95'
+                    }`}
+                    title={exp.isReturned ? 'Click to mark as not returned' : 'Click when they return your money to add back to total amount'}
+                  >
+                    {exp.isReturned ? (
+                      <>
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        <span>Returned (Added to Total)</span>
+                      </>
+                    ) : (
+                      <>
+                        <RotateCcw className="w-3 h-3 text-amber-600" />
+                        <span>Not Returned (Tap if returned)</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           );
         })}
@@ -191,6 +239,36 @@ export const TransactionList: React.FC = () => {
                     <span className="font-bold text-slate-900 block">
                       {exp.reason}
                     </span>
+                    {exp.spentForOther && (
+                      <div className="mt-1">
+                        <button
+                          type="button"
+                          onClick={() => toggleExpenseReturned(exp.id)}
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border text-[10px] font-bold transition-all cursor-pointer ${
+                            exp.isReturned
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100 shadow-2xs'
+                              : 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100 shadow-2xs active:scale-95'
+                          }`}
+                          title={
+                            exp.isReturned
+                              ? 'Money returned! Added back to account. Click to toggle.'
+                              : 'Money pending return. Click when repaid to add back to your total amount.'
+                          }
+                        >
+                          {exp.isReturned ? (
+                            <>
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                              <span>Returned (Added to total)</span>
+                            </>
+                          ) : (
+                            <>
+                              <RotateCcw className="w-3 h-3 text-amber-600 shrink-0" />
+                              <span>Spent for other: Not returned (Tap when repaid)</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
                   </td>
 
                   {/* Category */}
@@ -241,7 +319,7 @@ export const TransactionList: React.FC = () => {
                     <div className="flex items-center justify-center space-x-1">
                       <button
                         onClick={() => openEditModal(exp)}
-                        className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors cursor-pointer"
+                        className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-powder-blue/30 rounded-lg transition-colors cursor-pointer"
                         title="Edit expense"
                       >
                         <Pencil className="w-4 h-4" />

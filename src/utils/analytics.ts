@@ -264,15 +264,50 @@ export const computeSummaryStats = (
       ? whereGroups[1]
       : null;
 
-  // Account spending calculation
+  // Account spending calculation with Kotak user & best friend split
   const spentByAccount: Record<PaymentMethod, number> = {
     cash: 0,
     upi_kotak: 0,
     upi_union: 0,
   };
+  let kotakMineSpent = 0;
+  let kotakFriendSpent = 0;
+
+  // Returned amounts from expenses marked spentForOther and isReturned
+  const returnedByAccount: Record<PaymentMethod, number> = {
+    cash: 0,
+    upi_kotak: 0,
+    upi_union: 0,
+  };
+  let kotakMineReturned = 0;
+  let kotakFriendReturned = 0;
+  let totalReturned = 0;
+
   expenses.forEach((e) => {
     if (spentByAccount[e.paymentMethod] !== undefined) {
       spentByAccount[e.paymentMethod] += e.amount;
+    }
+    if (e.paymentMethod === 'upi_kotak') {
+      if (e.paidBy === 'friend') {
+        kotakFriendSpent += e.amount;
+      } else {
+        kotakMineSpent += e.amount;
+      }
+    }
+
+    // If spent for someone else and they returned the money:
+    if (e.spentForOther && e.isReturned) {
+      totalReturned += e.amount;
+      if (returnedByAccount[e.paymentMethod] !== undefined) {
+        returnedByAccount[e.paymentMethod] += e.amount;
+      }
+      if (e.paymentMethod === 'upi_kotak') {
+        if (e.paidBy === 'friend') {
+          kotakFriendReturned += e.amount;
+        } else {
+          kotakMineReturned += e.amount;
+        }
+      }
     }
   });
 
@@ -282,6 +317,8 @@ export const computeSummaryStats = (
     upi_kotak: 0,
     upi_union: 0,
   };
+  let kotakMineLent = 0;
+  let kotakFriendLent = 0;
   let totalLentPending = 0;
   let totalSettled = 0;
   let activeLoansCount = 0;
@@ -294,11 +331,36 @@ export const computeSummaryStats = (
       if (lentPendingByAccount[loan.account] !== undefined) {
         lentPendingByAccount[loan.account] += loan.amount;
       }
+      if (loan.account === 'upi_kotak') {
+        if (loan.lentBy === 'friend') {
+          kotakFriendLent += loan.amount;
+        } else {
+          kotakMineLent += loan.amount;
+        }
+      }
     } else if (loan.status === 'settled') {
       totalSettled += loan.amount;
       settledLoansCount += 1;
     }
   });
+
+  // Kotak initial split calculation
+  const kotakMineTotal =
+    accountBalances.kotakSplit !== undefined
+      ? Math.max(0, accountBalances.kotakSplit.mine)
+      : Math.max(0, accountBalances.upi_kotak);
+  const kotakFriendTotal =
+    accountBalances.kotakSplit !== undefined
+      ? Math.max(0, accountBalances.kotakSplit.friend)
+      : 0;
+  const effectiveKotakTotalMoney =
+    accountBalances.kotakSplit !== undefined
+      ? kotakMineTotal + kotakFriendTotal
+      : accountBalances.upi_kotak;
+
+  const kotakMineBalance = kotakMineTotal - kotakMineSpent - kotakMineLent + kotakMineReturned;
+  const kotakFriendBalance = kotakFriendTotal - kotakFriendSpent - kotakFriendLent + kotakFriendReturned;
+  const kotakTotalBalance = kotakMineBalance + kotakFriendBalance;
 
   const cashDetail = {
     id: 'cash' as PaymentMethod,
@@ -306,16 +368,34 @@ export const computeSummaryStats = (
     totalMoney: accountBalances.cash,
     spent: spentByAccount.cash,
     lent: lentPendingByAccount.cash,
-    balance: accountBalances.cash - spentByAccount.cash - lentPendingByAccount.cash,
+    returned: returnedByAccount.cash,
+    balance: accountBalances.cash - spentByAccount.cash - lentPendingByAccount.cash + returnedByAccount.cash,
   };
 
   const kotakDetail = {
     id: 'upi_kotak' as PaymentMethod,
     name: 'UPI (Kotak)',
-    totalMoney: accountBalances.upi_kotak,
+    totalMoney: effectiveKotakTotalMoney,
     spent: spentByAccount.upi_kotak,
     lent: lentPendingByAccount.upi_kotak,
-    balance: accountBalances.upi_kotak - spentByAccount.upi_kotak - lentPendingByAccount.upi_kotak,
+    returned: returnedByAccount.upi_kotak,
+    balance: kotakTotalBalance,
+    split: {
+      mine: {
+        totalMoney: kotakMineTotal,
+        spent: kotakMineSpent,
+        lent: kotakMineLent,
+        returned: kotakMineReturned,
+        balance: kotakMineBalance,
+      },
+      friend: {
+        totalMoney: kotakFriendTotal,
+        spent: kotakFriendSpent,
+        lent: kotakFriendLent,
+        returned: kotakFriendReturned,
+        balance: kotakFriendBalance,
+      },
+    },
   };
 
   const unionDetail = {
@@ -324,15 +404,17 @@ export const computeSummaryStats = (
     totalMoney: accountBalances.upi_union,
     spent: spentByAccount.upi_union,
     lent: lentPendingByAccount.upi_union,
-    balance: accountBalances.upi_union - spentByAccount.upi_union - lentPendingByAccount.upi_union,
+    returned: returnedByAccount.upi_union,
+    balance: accountBalances.upi_union - spentByAccount.upi_union - lentPendingByAccount.upi_union + returnedByAccount.upi_union,
   };
 
-  const grandTotalMoney = accountBalances.cash + accountBalances.upi_kotak + accountBalances.upi_union;
+  const grandTotalMoney = accountBalances.cash + effectiveKotakTotalMoney + accountBalances.upi_union;
   const remainingBalance = cashDetail.balance + kotakDetail.balance + unionDetail.balance;
   const spentPercentage = grandTotalMoney > 0 ? Number(((totalSpent / grandTotalMoney) * 100).toFixed(1)) : 0;
 
   return {
     totalSpent,
+    totalReturned,
     transactionCount,
     distinctDays,
     dailyAverage,

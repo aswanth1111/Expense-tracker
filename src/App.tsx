@@ -45,7 +45,7 @@ const MainAppContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col selection:bg-indigo-500 selection:text-white pb-20 sm:pb-8">
+    <div className="min-h-screen bg-white flex flex-col selection:bg-[#A8C9C8] selection:text-[#0e2928] pb-20 sm:pb-8">
       {/* Top Navigation Header */}
       <Navbar />
 
@@ -61,7 +61,7 @@ const MainAppContent: React.FC = () => {
       {/* Floating Action Button for Mobile (Instant Add Expense on Phone) */}
       <button
         onClick={openAddModal}
-        className="sm:hidden fixed right-4 bottom-18 z-40 bg-indigo-600 text-white rounded-full p-3.5 shadow-xl shadow-indigo-400/50 flex items-center justify-center active:scale-90 transition-all cursor-pointer"
+        className="sm:hidden fixed right-4 bottom-18 z-40 bg-powder-blue text-slate-900 font-bold rounded-full p-3.5 shadow-xl shadow-powder-glow flex items-center justify-center active:scale-90 transition-all cursor-pointer border border-[#8ebdbb]"
         aria-label="Add Expense"
       >
         <Plus className="w-6 h-6 stroke-[2.5]" />

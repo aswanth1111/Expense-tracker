@@ -21,16 +21,16 @@ export const BudgetBanner: React.FC = () => {
   // 1. If total money across all accounts is 0
   if (totalMoney === 0) {
     return (
-      <div className="bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-indigo-500/5 rounded-2xl border border-indigo-100 p-4 sm:p-5 mb-4 sm:mb-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <div className="bg-gradient-to-r from-powder-blue/20 via-powder-blue/10 to-white rounded-2xl border border-powder-blue/40 p-4 sm:p-5 mb-4 sm:mb-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-200 shrink-0">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-powder-blue text-slate-950 border border-[#8ebdbb] flex items-center justify-center shadow-md shadow-powder-glow shrink-0">
             <Wallet className="w-5 h-5 sm:w-6 sm:h-6" />
           </div>
           <div>
             <h3 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-1.5">
               <span>Set Your Account Balances</span>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
-                Cash • Kotak • Union
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-powder-blue/30 text-slate-800 border border-[#8ebdbb]/50">
+                Cash • Kotak (You &amp; Best Friend) • Union
               </span>
             </h3>
             <p className="text-xs text-slate-500">
@@ -41,7 +41,7 @@ export const BudgetBanner: React.FC = () => {
 
         <button
           onClick={() => openBudgetModal('set')}
-          className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition-all cursor-pointer shrink-0 w-full sm:w-auto justify-center"
+          className="inline-flex items-center gap-1.5 px-4 py-2 bg-powder-blue hover:bg-powder-blue-hover active:bg-[#8ebdbb] text-slate-950 text-xs sm:text-sm font-bold rounded-xl border border-[#8ebdbb] shadow-xs shadow-powder-glow transition-all cursor-pointer shrink-0 w-full sm:w-auto justify-center"
         >
           <Plus className="w-4 h-4 stroke-[2.5]" />
           <span>Set Balances</span>
@@ -152,16 +152,19 @@ export const BudgetBanner: React.FC = () => {
             </span>
           </div>
 
-          <div className="pt-2 border-t border-emerald-100/80 text-[10px] text-slate-500 flex items-center justify-between">
+          <div className="pt-2 border-t border-emerald-100/80 text-[10px] text-slate-500 flex items-center justify-between flex-wrap gap-1">
             <span>Total: {formatCurrency(accounts.cash.totalMoney)}</span>
             <span>Spent: {formatCurrency(accounts.cash.spent)}</span>
+            {(accounts.cash.returned ?? 0) > 0 && (
+              <span className="text-emerald-700 font-bold bg-emerald-100/80 px-1 rounded">+{formatCurrency(accounts.cash.returned!)} returned</span>
+            )}
             {accounts.cash.lent > 0 && (
               <span className="text-amber-600 font-semibold">Lent: {formatCurrency(accounts.cash.lent)}</span>
             )}
           </div>
         </div>
 
-        {/* 2. UPI (Kotak) Card */}
+        {/* 2. UPI (Kotak) Card - Single Account with Split Shares for User & Best Friend */}
         <div className="p-3.5 rounded-xl bg-gradient-to-br from-red-50/70 via-red-50/30 to-white border border-red-200/80 shadow-2xs flex flex-col justify-between gap-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -177,9 +180,14 @@ export const BudgetBanner: React.FC = () => {
           </div>
 
           <div>
-            <span className="text-[10px] uppercase font-bold text-red-700/70 block">
-              Available Left
-            </span>
+            <div className="flex items-center justify-between mb-0.5">
+              <span className="text-[10px] uppercase font-bold text-red-700/70 block">
+                Total Available Left
+              </span>
+              <span className="text-[10px] font-bold text-red-700 bg-red-100/60 px-1.5 py-0.2 rounded">
+                Combined
+              </span>
+            </div>
             <span
               className={`text-lg sm:text-xl font-black ${
                 accounts.upi_kotak.balance < 0 ? 'text-rose-600' : 'text-slate-900'
@@ -187,13 +195,50 @@ export const BudgetBanner: React.FC = () => {
             >
               {formatCurrency(accounts.upi_kotak.balance)}
             </span>
+
+            {/* Mine & Best Friend Individual Breakdown */}
+            {accounts.upi_kotak.split && (
+              <div className="mt-2 pt-2 border-t border-red-100/80 grid grid-cols-2 gap-1.5 bg-white/80 p-2 rounded-lg border border-red-100 shadow-2xs">
+                <div className="text-[10px]">
+                  <span className="text-slate-500 font-semibold block">👤 Mine:</span>
+                  <span className={`font-black text-xs ${accounts.upi_kotak.split.mine.balance < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                    {formatCurrency(accounts.upi_kotak.split.mine.balance)}
+                  </span>
+                  <span className="text-[9px] text-slate-400 block mt-0.5">
+                    Spent: {formatCurrency(accounts.upi_kotak.split.mine.spent)}
+                    {(accounts.upi_kotak.split.mine.returned ?? 0) > 0 && (
+                      <span className="text-emerald-700 font-bold ml-1">
+                        (+{formatCurrency(accounts.upi_kotak.split.mine.returned!)} ret)
+                      </span>
+                    )}
+                  </span>
+                </div>
+                <div className="text-[10px] border-l border-slate-100 pl-2">
+                  <span className="text-slate-500 font-semibold block">👥 Best Friend:</span>
+                  <span className={`font-black text-xs ${accounts.upi_kotak.split.friend.balance < 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+                    {formatCurrency(accounts.upi_kotak.split.friend.balance)}
+                  </span>
+                  <span className="text-[9px] text-slate-400 block mt-0.5">
+                    Spent: {formatCurrency(accounts.upi_kotak.split.friend.spent)}
+                    {(accounts.upi_kotak.split.friend.returned ?? 0) > 0 && (
+                      <span className="text-emerald-700 font-bold ml-1">
+                        (+{formatCurrency(accounts.upi_kotak.split.friend.returned!)} ret)
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="pt-2 border-t border-red-100/80 text-[10px] text-slate-500 flex items-center justify-between">
+          <div className="pt-2 border-t border-red-100/80 text-[10px] text-slate-500 flex items-center justify-between flex-wrap gap-1">
             <span>Total: {formatCurrency(accounts.upi_kotak.totalMoney)}</span>
             <span>Spent: {formatCurrency(accounts.upi_kotak.spent)}</span>
+            {(accounts.upi_kotak.returned ?? 0) > 0 && (
+              <span className="text-emerald-700 font-bold bg-emerald-100/80 px-1 rounded">+{formatCurrency(accounts.upi_kotak.returned!)} returned</span>
+            )}
             {accounts.upi_kotak.lent > 0 && (
-              <span className="text-amber-600 font-semibold">Lent: {formatCurrency(accounts.upi_kotak.lent)}</span>
+              <span className="text-vibrant-orange font-semibold">Lent: {formatCurrency(accounts.upi_kotak.lent)}</span>
             )}
           </div>
         </div>
@@ -226,9 +271,12 @@ export const BudgetBanner: React.FC = () => {
             </span>
           </div>
 
-          <div className="pt-2 border-t border-blue-100/80 text-[10px] text-slate-500 flex items-center justify-between">
+          <div className="pt-2 border-t border-blue-100/80 text-[10px] text-slate-500 flex items-center justify-between flex-wrap gap-1">
             <span>Total: {formatCurrency(accounts.upi_union.totalMoney)}</span>
             <span>Spent: {formatCurrency(accounts.upi_union.spent)}</span>
+            {(accounts.upi_union.returned ?? 0) > 0 && (
+              <span className="text-emerald-700 font-bold bg-emerald-100/80 px-1 rounded">+{formatCurrency(accounts.upi_union.returned!)} returned</span>
+            )}
             {accounts.upi_union.lent > 0 && (
               <span className="text-amber-600 font-semibold">Lent: {formatCurrency(accounts.upi_union.lent)}</span>
             )}
@@ -240,16 +288,16 @@ export const BudgetBanner: React.FC = () => {
       {lendingSummary.totalLentPending > 0 && (
         <div
           onClick={() => setActiveTab('lending')}
-          className="p-3 bg-amber-50/80 hover:bg-amber-100/80 border border-amber-200/80 rounded-xl flex items-center justify-between transition-colors cursor-pointer text-xs"
+          className="p-3 bg-vibrant-orange-light hover:bg-[#ffe6d6] border border-vibrant-orange/30 rounded-xl flex items-center justify-between transition-colors cursor-pointer text-xs"
         >
-          <div className="flex items-center space-x-2 text-amber-900 font-medium">
-            <HandCoins className="w-4 h-4 text-amber-600 shrink-0" />
+          <div className="flex items-center space-x-2 text-[#a33800] font-medium">
+            <HandCoins className="w-4 h-4 text-vibrant-orange shrink-0" />
             <span>
               <strong>{formatCurrency(lendingSummary.totalLentPending)}</strong> currently lent across{' '}
               {lendingSummary.activeLoansCount} friend(s).
             </span>
           </div>
-          <span className="text-amber-700 font-bold flex items-center gap-1 hover:underline shrink-0">
+          <span className="text-vibrant-orange font-bold flex items-center gap-1 hover:underline shrink-0">
             <span>View Friends</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </span>

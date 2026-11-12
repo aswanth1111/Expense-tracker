@@ -23,12 +23,12 @@ export const StatsOverview: React.FC = () => {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 mb-4 sm:mb-6">
       {/* 1. Total Spend Card */}
-      <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200/80 p-3 sm:p-5 shadow-xs hover:border-indigo-200 transition-all">
+      <div className="bg-white rounded-xl sm:rounded-2xl border border-slate-200/80 p-3 sm:p-5 shadow-xs hover:border-powder-blue/50 transition-all">
         <div className="flex items-center justify-between text-slate-500 mb-1 sm:mb-2">
           <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-slate-500">
             Total Spent
           </span>
-          <div className="p-1.5 sm:p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+          <div className="p-1.5 sm:p-2 bg-powder-blue/30 text-slate-900 border border-[#8ebdbb]/50 rounded-lg">
             <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </div>
         </div>
@@ -79,7 +79,7 @@ export const StatsOverview: React.FC = () => {
           {topCategory ? (
             <>
               <span className="truncate">{formatCurrency(topCategory.total)}</span>
-              <span className="text-indigo-600 font-medium flex items-center shrink-0 ml-1">
+              <span className="text-slate-800 font-medium flex items-center shrink-0 ml-1">
                 <ArrowUpRight className="w-3 h-3" />
               </span>
             </>
@@ -109,7 +109,7 @@ export const StatsOverview: React.FC = () => {
           {highestSpendingDay ? (
             <>
               <span className="truncate">{highestSpendingDay.displayDate}</span>
-              <span className="text-indigo-600 font-medium flex items-center shrink-0 ml-1">
+              <span className="text-slate-800 font-medium flex items-center shrink-0 ml-1">
                 <ArrowUpRight className="w-3 h-3" />
               </span>
             </>

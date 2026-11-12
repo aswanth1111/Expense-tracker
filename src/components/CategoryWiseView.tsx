@@ -136,7 +136,7 @@ export const CategoryWiseView: React.FC = () => {
         <div className="lg:col-span-7 bg-white rounded-xl sm:rounded-2xl border border-slate-200/80 p-3.5 sm:p-5 shadow-xs space-y-2.5 sm:space-y-3">
           <div className="flex items-center justify-between mb-1">
             <h3 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-1.5 sm:gap-2">
-              <ShoppingBag className="w-4 h-4 text-indigo-600" />
+              <ShoppingBag className="w-4 h-4 text-slate-800" />
               Category Ranking & Share
             </h3>
             <span className="text-[10px] sm:text-xs text-slate-400">Tap to inspect</span>
@@ -151,7 +151,7 @@ export const CategoryWiseView: React.FC = () => {
                   onClick={() => setSelectedCategory(isSelected ? null : cat.category)}
                   className={`p-2.5 sm:p-3.5 rounded-xl border transition-all cursor-pointer ${
                     isSelected
-                      ? 'border-indigo-400 bg-indigo-50/40 shadow-xs'
+                      ? 'border-powder-blue bg-powder-blue/20 shadow-xs'
                       : 'border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/50'
                   }`}
                 >
@@ -181,7 +181,7 @@ export const CategoryWiseView: React.FC = () => {
                       <span className="text-xs sm:text-sm font-extrabold text-slate-900 block">
                         {formatCurrency(cat.total)}
                       </span>
-                      <span className="text-[10px] sm:text-xs font-semibold text-indigo-600">
+                      <span className="text-[10px] sm:text-xs font-semibold text-slate-700">
                         {cat.percentage}%
                       </span>
                     </div>
@@ -206,7 +206,7 @@ export const CategoryWiseView: React.FC = () => {
 
       {/* 2. Category Drill-down Transactions */}
       {selectedCategory && (
-        <div className="bg-white rounded-xl sm:rounded-2xl border border-indigo-200 p-4 sm:p-6 shadow-sm animate-in fade-in duration-200">
+        <div className="bg-white rounded-xl sm:rounded-2xl border border-powder-blue/60 p-4 sm:p-6 shadow-sm animate-in fade-in duration-200">
           <div className="flex items-center justify-between pb-3 sm:pb-4 border-b border-slate-100 mb-3 sm:mb-4">
             <div className="flex items-center space-x-2.5 sm:space-x-3">
               <div
@@ -234,7 +234,7 @@ export const CategoryWiseView: React.FC = () => {
                   setFilters((prev) => ({ ...prev, category: selectedCategory }));
                   setActiveTab('transactions');
                 }}
-                className="text-[11px] sm:text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-2.5 sm:px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
+                className="text-[11px] sm:text-xs font-bold text-slate-950 bg-powder-blue hover:bg-powder-blue-hover border border-[#8ebdbb] px-2.5 sm:px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-xs transition-colors cursor-pointer"
               >
                 <Filter className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 <span>Filter</span>

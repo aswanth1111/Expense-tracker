@@ -18,14 +18,20 @@ rules_version = '2';
 //   - reason: string (required, 1-500 chars)
 //   - category: string (required, 1-50 chars)
 //   - paymentMethod: string (required, 'cash' | 'upi_kotak' | 'upi_union')
+//   - paidBy: string (optional, 'mine' | 'friend')
 //   - merchant: string (required, 0-150 chars)
 //   - date: string (required, 8-35 chars, format YYYY-MM-DD...)
+//   - time: string (optional, 0-10 chars, format HH:mm or empty)
+//   - spentForOther: bool (optional, defaults to false)
+//   - isReturned: bool (optional, defaults to false)
+//   - returnedAt: number (optional, timestamp > 0)
 //   - createdAt: number (required, > 0, immutable)
 //
 // Collection: settings
 // Document ID: budget
 // Fields:
-//   - balances: map (required, keys: 'cash', 'upi_kotak', 'upi_union', each number >= 0)
+//   - balances: map (required, keys: 'cash', 'upi_kotak', 'upi_union', optional 'kotakSplit', each number >= 0, <= 10,000,000,000)
+//   - kotakSplit: map (optional, keys: 'mine', 'friend', each number >= 0, <= 10,000,000,000)
 //   - totalMoney: number (required, >= 0, <= 30,000,000,000)
 //   - updatedAt: number (required, > 0)
 //
@@ -36,6 +42,7 @@ rules_version = '2';
 //   - friendName: string (required, 1-100 chars)
 //   - amount: number (required, > 0, <= 1,000,000,000)
 //   - account: string (required, 'cash' | 'upi_kotak' | 'upi_union')
+//   - lentBy: string (optional, 'mine' | 'friend')
 //   - date: string (required, 8-35 chars, format YYYY-MM-DD...)
 //   - notes: string (optional, 0-500 chars)
 //   - status: string (required, 'pending' | 'settled')
@@ -88,6 +95,53 @@ service cloud.firestore {
               data[field].matches('^\\d{4}-\\d{2}-\\d{2}.*'));
     }
 
+    // Optional spend share validator for 'paidBy' in expenses and 'lentBy' in lending
+    function isValidOptionalSpendShare(field) {
+      let data = request.resource.data;
+      return !(field in data) ||
+             data[field] == null ||
+             (data[field] is string && data[field] in ['mine', 'friend']);
+    }
+
+    // Optional time validator (format HH:mm up to 10 chars, or empty string)
+    function isValidOptionalTime(field) {
+      let data = request.resource.data;
+      return !(field in data) ||
+             data[field] == null ||
+             (data[field] is string &&
+              data[field].size() <= 10 &&
+              (data[field].size() == 0 || data[field].matches('^\\d{1,2}:\\d{2}.*')));
+    }
+
+    // Optional boolean validator
+    function isValidOptionalBool(field) {
+      let data = request.resource.data;
+      return !(field in data) ||
+             data[field] == null ||
+             data[field] is bool;
+    }
+
+    // Optional timestamp validator (> 0 epoch number)
+    function isValidOptionalTimestamp(field) {
+      let data = request.resource.data;
+      return !(field in data) ||
+             data[field] == null ||
+             (data[field] is number && data[field] > 0);
+    }
+
+    // Kotak split map validator with 'mine' and 'friend' non-negative amounts
+    function isValidKotakSplitMap(splitMap) {
+      return splitMap is map &&
+             splitMap.keys().hasAll(['mine', 'friend']) &&
+             splitMap.keys().hasOnly(['mine', 'friend']) &&
+             splitMap.mine is number &&
+             splitMap.mine >= 0 &&
+             splitMap.mine <= 10000000000 &&
+             splitMap.friend is number &&
+             splitMap.friend >= 0 &&
+             splitMap.friend <= 10000000000;
+    }
+
     // ===============================================================
     // Domain Validators: Expenses
     // ===============================================================
@@ -100,7 +154,8 @@ service cloud.firestore {
              ]) &&
              hasOnlyAllowedFields([
                'id', 'amount', 'reason', 'category',
-               'paymentMethod', 'merchant', 'date', 'createdAt'
+               'paymentMethod', 'merchant', 'date', 'createdAt',
+               'paidBy', 'time', 'spentForOther', 'isReturned', 'returnedAt'
              ]) &&
              validStringLength(data.id, 1, 100) &&
              data.id == expenseId &&
@@ -111,6 +166,11 @@ service cloud.firestore {
              validStringLength(data.category, 1, 50) &&
              data.paymentMethod is string &&
              data.paymentMethod in ['cash', 'upi_kotak', 'upi_union'] &&
+             isValidOptionalSpendShare('paidBy') &&
+             isValidOptionalTime('time') &&
+             isValidOptionalBool('spentForOther') &&
+             isValidOptionalBool('isReturned') &&
+             isValidOptionalTimestamp('returnedAt') &&
              data.merchant is string &&
              data.merchant.size() <= 150 &&
              validStringLength(data.date, 8, 35) &&
@@ -132,10 +192,10 @@ service cloud.firestore {
     function isValidBudget() {
       let data = request.resource.data;
       return hasRequiredFields(['balances', 'totalMoney', 'updatedAt']) &&
-             hasOnlyAllowedFields(['balances', 'totalMoney', 'updatedAt']) &&
+             hasOnlyAllowedFields(['balances', 'totalMoney', 'updatedAt', 'kotakSplit']) &&
              data.balances is map &&
              data.balances.keys().hasAll(['cash', 'upi_kotak', 'upi_union']) &&
-             data.balances.keys().hasOnly(['cash', 'upi_kotak', 'upi_union']) &&
+             data.balances.keys().hasOnly(['cash', 'upi_kotak', 'upi_union', 'kotakSplit']) &&
              data.balances.cash is number &&
              data.balances.cash >= 0 &&
              data.balances.cash <= 10000000000 &&
@@ -145,6 +205,12 @@ service cloud.firestore {
              data.balances.upi_union is number &&
              data.balances.upi_union >= 0 &&
              data.balances.upi_union <= 10000000000 &&
+             (!('kotakSplit' in data.balances) ||
+              data.balances.kotakSplit == null ||
+              isValidKotakSplitMap(data.balances.kotakSplit)) &&
+             (!('kotakSplit' in data) ||
+              data.kotakSplit == null ||
+              isValidKotakSplitMap(data.kotakSplit)) &&
              data.totalMoney is number &&
              data.totalMoney >= 0 &&
              data.totalMoney <= 30000000000 &&
@@ -162,7 +228,8 @@ service cloud.firestore {
                'id', 'friendName', 'amount', 'account', 'date', 'status', 'createdAt'
              ]) &&
              hasOnlyAllowedFields([
-               'id', 'friendName', 'amount', 'account', 'date', 'notes', 'status', 'settledDate', 'createdAt'
+               'id', 'friendName', 'amount', 'account', 'date', 'notes',
+               'status', 'settledDate', 'createdAt', 'lentBy'
              ]) &&
              validStringLength(data.id, 1, 100) &&
              data.id == loanId &&
@@ -172,6 +239,7 @@ service cloud.firestore {
              data.amount <= 1000000000 &&
              data.account is string &&
              data.account in ['cash', 'upi_kotak', 'upi_union'] &&
+             isValidOptionalSpendShare('lentBy') &&
              validStringLength(data.date, 8, 35) &&
              data.date.matches('^\\d{4}-\\d{2}-\\d{2}.*') &&
              isValidOptionalNotes('notes') &&

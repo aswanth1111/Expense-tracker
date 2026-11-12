@@ -29,6 +29,7 @@ export const LendingModal: React.FC = () => {
   const [friendName, setFriendName] = useState('');
   const [amount, setAmount] = useState('');
   const [account, setAccount] = useState<PaymentMethod>('upi_kotak');
+  const [lentBy, setLentBy] = useState<'mine' | 'friend'>('mine');
   const [date, setDate] = useState('');
   const [notes, setNotes] = useState('');
   const [status, setStatus] = useState<LoanStatus>('pending');
@@ -40,6 +41,7 @@ export const LendingModal: React.FC = () => {
       setFriendName(editingLending.friendName);
       setAmount(String(editingLending.amount));
       setAccount(editingLending.account);
+      setLentBy(editingLending.lentBy || 'mine');
       setDate(editingLending.date);
       setNotes(editingLending.notes || '');
       setStatus(editingLending.status);
@@ -47,6 +49,7 @@ export const LendingModal: React.FC = () => {
       setFriendName('');
       setAmount('');
       setAccount('upi_kotak');
+      setLentBy('mine');
       setDate(format(new Date(), 'yyyy-MM-dd'));
       setNotes('');
       setStatus('pending');
@@ -72,6 +75,7 @@ export const LendingModal: React.FC = () => {
       friendName: friendName.trim(),
       amount: parsedAmount,
       account,
+      lentBy: account === 'upi_kotak' ? lentBy : 'mine',
       date: date || format(new Date(), 'yyyy-MM-dd'),
       notes: notes.trim(),
       status,
@@ -102,7 +106,7 @@ export const LendingModal: React.FC = () => {
         {/* Modal Header */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 bg-slate-50/50 shrink-0">
           <div className="flex items-center space-x-2.5">
-            <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
+            <div className="p-2 rounded-xl bg-vibrant-orange-light text-vibrant-orange border border-vibrant-orange/20">
               <HandCoins className="w-5 h-5" />
             </div>
             <div>
@@ -140,7 +144,7 @@ export const LendingModal: React.FC = () => {
                 value={friendName}
                 onChange={(e) => setFriendName(e.target.value)}
                 placeholder="e.g. Rahul Sharma, Amit, Priya..."
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all text-slate-900 text-sm font-medium placeholder:text-slate-400"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-vibrant-orange/20 focus:border-vibrant-orange transition-all text-slate-900 text-sm font-medium placeholder:text-slate-400"
                 autoFocus
               />
             </div>
@@ -164,7 +168,7 @@ export const LendingModal: React.FC = () => {
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.00"
-                className="w-full text-2xl font-bold pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all text-slate-900 placeholder:text-slate-300"
+                className="w-full text-2xl font-bold pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-vibrant-orange/20 focus:border-vibrant-orange transition-all text-slate-900 placeholder:text-slate-300"
               />
             </div>
 
@@ -175,9 +179,9 @@ export const LendingModal: React.FC = () => {
                   key={val}
                   type="button"
                   onClick={() => handleQuickAmount(val)}
-                  className="text-xs px-2.5 py-1 rounded-md bg-slate-100 hover:bg-amber-50 hover:text-amber-700 text-slate-600 font-medium transition-colors cursor-pointer flex items-center gap-0.5"
+                  className="text-xs px-2.5 py-1 rounded-md bg-vibrant-orange-light hover:bg-[#ffe6d6] text-vibrant-orange font-bold border border-vibrant-orange/30 transition-colors cursor-pointer flex items-center gap-0.5"
                 >
-                  <Plus className="w-3 h-3 text-slate-400" />₹{val.toLocaleString('en-IN')}
+                  <Plus className="w-3 h-3 text-vibrant-orange" />₹{val.toLocaleString('en-IN')}
                 </button>
               ))}
               {amount && (
@@ -213,7 +217,7 @@ export const LendingModal: React.FC = () => {
                     onClick={() => setAccount(method.id)}
                     className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
                       isSelected
-                        ? 'border-amber-500 bg-amber-50/70 text-amber-900 ring-2 ring-amber-500/20 shadow-xs'
+                        ? 'border-vibrant-orange bg-vibrant-orange-light text-slate-950 ring-2 ring-vibrant-orange/20 shadow-xs'
                         : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
                     }`}
                   >
@@ -233,6 +237,50 @@ export const LendingModal: React.FC = () => {
             </p>
           </div>
 
+          {/* Kotak Lender Share Picker */}
+          {account === 'upi_kotak' && (
+            <div className="p-3 bg-red-50/70 border border-red-200/80 rounded-xl space-y-2 animate-in fade-in">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-red-950 uppercase tracking-wider">
+                  Lent From Whose Share? (Kotak) *
+                </label>
+                <span className="text-[10px] text-red-700 bg-red-100 font-semibold px-2 py-0.5 rounded">
+                  Deducts from this person's share
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setLentBy('mine')}
+                  className={`p-2 rounded-xl border text-xs font-bold flex flex-col items-center justify-center transition-all cursor-pointer ${
+                    lentBy === 'mine'
+                      ? 'border-red-500 bg-white text-red-900 ring-2 ring-red-500/20 shadow-xs'
+                      : 'border-slate-200 bg-white/70 text-slate-600 hover:bg-white'
+                  }`}
+                >
+                  <span className="text-xs">👤 Mine</span>
+                  <span className="text-[10px] text-slate-500 font-normal mt-0.5">
+                    Available: {formatCurrency(summaryStats.accounts.upi_kotak.split?.mine.balance || 0)}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLentBy('friend')}
+                  className={`p-2 rounded-xl border text-xs font-bold flex flex-col items-center justify-center transition-all cursor-pointer ${
+                    lentBy === 'friend'
+                      ? 'border-red-500 bg-white text-red-900 ring-2 ring-red-500/20 shadow-xs'
+                      : 'border-slate-200 bg-white/70 text-slate-600 hover:bg-white'
+                  }`}
+                >
+                  <span className="text-xs">👥 Best Friend</span>
+                  <span className="text-[10px] text-slate-500 font-normal mt-0.5">
+                    Available: {formatCurrency(summaryStats.accounts.upi_kotak.split?.friend.balance || 0)}
+                  </span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Date & Loan Status Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Date */}
@@ -249,7 +297,7 @@ export const LendingModal: React.FC = () => {
                   required
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-amber-500 text-xs font-medium text-slate-700"
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-vibrant-orange text-xs font-medium text-slate-700"
                 />
               </div>
             </div>
@@ -265,7 +313,7 @@ export const LendingModal: React.FC = () => {
                   onClick={() => setStatus('pending')}
                   className={`py-1.5 rounded-lg transition-all cursor-pointer ${
                     status === 'pending'
-                      ? 'bg-amber-500 text-white shadow-xs'
+                      ? 'bg-vibrant-orange text-white shadow-xs font-bold'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -276,7 +324,7 @@ export const LendingModal: React.FC = () => {
                   onClick={() => setStatus('settled')}
                   className={`py-1.5 rounded-lg transition-all cursor-pointer ${
                     status === 'settled'
-                      ? 'bg-emerald-600 text-white shadow-xs'
+                      ? 'bg-emerald-600 text-white shadow-xs font-bold'
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
@@ -300,7 +348,7 @@ export const LendingModal: React.FC = () => {
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="e.g. Swiggy food split, emergency travel ticket, promised to return on Friday..."
                 rows={2}
-                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all text-xs text-slate-700 placeholder:text-slate-400"
+                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-vibrant-orange/20 focus:border-vibrant-orange transition-all text-xs text-slate-700 placeholder:text-slate-400"
               />
             </div>
           </div>
@@ -316,7 +364,7 @@ export const LendingModal: React.FC = () => {
             </button>
             <button
               type="submit"
-              className="inline-flex items-center gap-1.5 px-5 py-2 text-xs sm:text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 active:bg-amber-800 rounded-xl shadow-xs shadow-amber-200 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-5 py-2 text-xs sm:text-sm font-bold text-white bg-vibrant-orange hover:bg-vibrant-orange-hover active:bg-[#c44403] rounded-xl shadow-xs shadow-orange-glow transition-colors cursor-pointer"
             >
               <Check className="w-4 h-4 stroke-[2.5]" />
               <span>{editingLending ? 'Save Changes' : 'Record Loan'}</span>

@@ -76,7 +76,7 @@ export const LendingView: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <span className="p-2 bg-amber-50 text-amber-600 rounded-xl">
+            <span className="p-2 bg-vibrant-orange-light text-vibrant-orange rounded-xl border border-vibrant-orange/20">
               <HandCoins className="w-5 h-5 sm:w-6 sm:h-6" />
             </span>
             <span>Money Lent to Friends</span>
@@ -88,7 +88,7 @@ export const LendingView: React.FC = () => {
 
         <button
           onClick={openAddLendingModal}
-          className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs shadow-amber-200 transition-all cursor-pointer shrink-0"
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-vibrant-orange hover:bg-vibrant-orange-hover active:bg-[#c44403] text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs shadow-orange-glow transition-all cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4 stroke-[2.5]" />
           <span>Lend Money</span>
@@ -98,12 +98,12 @@ export const LendingView: React.FC = () => {
       {/* Top 4 Metrics Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Card 1: Currently Pending */}
-        <div className="bg-white p-4 rounded-2xl border border-amber-200/80 shadow-xs relative overflow-hidden">
+        <div className="bg-white p-4 rounded-2xl border border-vibrant-orange/40 shadow-xs relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] sm:text-xs font-bold text-amber-600 uppercase tracking-wider">
+            <span className="text-[11px] sm:text-xs font-bold text-vibrant-orange uppercase tracking-wider">
               Pending from Friends
             </span>
-            <div className="p-1.5 bg-amber-50 text-amber-600 rounded-lg">
+            <div className="p-1.5 bg-vibrant-orange-light text-vibrant-orange rounded-lg">
               <Clock className="w-4 h-4" />
             </div>
           </div>
@@ -175,7 +175,7 @@ export const LendingView: React.FC = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search by friend's name or note..."
-              className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-amber-500 placeholder:text-slate-400 text-slate-800"
+              className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-vibrant-orange placeholder:text-slate-400 text-slate-800"
             />
           </div>
 
@@ -195,7 +195,7 @@ export const LendingView: React.FC = () => {
               onClick={() => setStatusFilter('pending')}
               className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 statusFilter === 'pending'
-                  ? 'bg-amber-500 text-white shadow-xs'
+                  ? 'bg-vibrant-orange text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -263,7 +263,7 @@ export const LendingView: React.FC = () => {
       {/* Lending Records List */}
       {filteredRecords.length === 0 ? (
         <div className="bg-white rounded-2xl border border-slate-200 p-8 sm:p-12 text-center space-y-3">
-          <div className="w-14 h-14 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mx-auto">
+          <div className="w-14 h-14 bg-vibrant-orange-light text-vibrant-orange rounded-2xl flex items-center justify-center mx-auto border border-vibrant-orange/30">
             <HandCoins className="w-7 h-7" />
           </div>
           <h3 className="text-base sm:text-lg font-bold text-slate-800">
@@ -279,7 +279,7 @@ export const LendingView: React.FC = () => {
           {lendingRecords.length === 0 && (
             <button
               onClick={openAddLendingModal}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition-colors cursor-pointer mt-2"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-vibrant-orange hover:bg-vibrant-orange-hover active:bg-[#c44403] text-white text-xs sm:text-sm font-bold rounded-xl shadow-xs shadow-orange-glow transition-colors cursor-pointer mt-2"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
               <span>Record First Loan</span>
@@ -296,7 +296,7 @@ export const LendingView: React.FC = () => {
                 key={record.id}
                 className={`bg-white rounded-2xl border p-4 sm:p-5 shadow-xs transition-all relative overflow-hidden flex flex-col justify-between gap-3 ${
                   isPending
-                    ? 'border-amber-200/90 hover:border-amber-300'
+                    ? 'border-vibrant-orange/40 hover:border-vibrant-orange/60'
                     : 'border-slate-200/80 bg-slate-50/40 opacity-90'
                 }`}
               >
@@ -304,7 +304,7 @@ export const LendingView: React.FC = () => {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center space-x-3">
                     {/* Initials Avatar */}
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-500 to-orange-400 text-white font-bold flex items-center justify-center text-sm shadow-xs shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-vibrant-orange to-orange-400 text-white font-bold flex items-center justify-center text-sm shadow-xs shrink-0">
                       {record.friendName.slice(0, 2).toUpperCase()}
                     </div>
                     <div>
@@ -322,7 +322,7 @@ export const LendingView: React.FC = () => {
                   <span
                     className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold shrink-0 ${
                       isPending
-                        ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                        ? 'bg-vibrant-orange-light text-vibrant-orange border border-vibrant-orange/30'
                         : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                     }`}
                   >
@@ -361,7 +361,7 @@ export const LendingView: React.FC = () => {
                         {record.account === 'cash'
                           ? 'Cash'
                           : record.account === 'upi_kotak'
-                          ? 'UPI Kotak'
+                          ? `UPI Kotak (${record.lentBy === 'friend' ? "Friend's" : 'Mine'})`
                           : 'UPI Union'}
                       </span>
                     </div>
@@ -370,7 +370,7 @@ export const LendingView: React.FC = () => {
 
                 {/* Notes if any */}
                 {record.notes && (
-                  <p className="text-xs text-slate-600 bg-amber-50/40 p-2.5 rounded-xl border border-amber-100/60 italic">
+                  <p className="text-xs text-slate-600 bg-vibrant-orange-light/50 p-2.5 rounded-xl border border-vibrant-orange/20 italic">
                     "{record.notes}"
                   </p>
                 )}

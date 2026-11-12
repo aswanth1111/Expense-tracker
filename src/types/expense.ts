@@ -14,6 +14,8 @@ export type CategoryId =
 
 export type PaymentMethod = 'cash' | 'upi_kotak' | 'upi_union';
 
+export type SpendShare = 'mine' | 'friend';
+
 export interface Expense {
   id: string;
   reason: string;          // Why it was spent / Purpose (main description)
@@ -22,6 +24,10 @@ export interface Expense {
   category: CategoryId;    // Category
   merchant?: string;       // Where it was spent (e.g. Store/Place)
   paymentMethod: PaymentMethod; // Cash | UPI (Kotak) | UPI (Union)
+  paidBy?: SpendShare;     // 'mine' (default) | 'friend' (best friend)
+  spentForOther?: boolean; // Toggle: whether this expense was paid for someone else
+  isReturned?: boolean;    // Toggle in All Expenses: whether they returned the money
+  returnedAt?: number;     // Timestamp when returned
   date: string;            // ISO Date: YYYY-MM-DD
   time?: string;           // HH:mm
   createdAt: number;       // Unix timestamp for sorting
@@ -30,10 +36,24 @@ export interface Expense {
 // ----------------------------------------------------
 // Account & Wallet Balances (Cash, UPI Kotak, UPI Union)
 // ----------------------------------------------------
+export interface KotakSplit {
+  mine: number;
+  friend: number;
+}
+
 export interface AccountBalances {
   cash: number;
-  upi_kotak: number;
+  upi_kotak: number;       // Total Kotak = kotakSplit.mine + kotakSplit.friend
   upi_union: number;
+  kotakSplit?: KotakSplit; // Breakdown of funds between user & best friend in Kotak
+}
+
+export interface KotakShareDetail {
+  totalMoney: number;
+  spent: number;
+  lent: number;
+  returned?: number;       // Total returned from expenses marked spentForOther
+  balance: number;
 }
 
 export interface AccountDetail {
@@ -42,7 +62,12 @@ export interface AccountDetail {
   totalMoney: number;   // Total funds deposited into this account
   spent: number;        // Total spent on expenses from this account
   lent: number;         // Total currently lent (pending) from this account
-  balance: number;      // totalMoney - spent - lent
+  returned?: number;    // Total returned from expenses marked spentForOther
+  balance: number;      // totalMoney - spent - lent + returned
+  split?: {
+    mine: KotakShareDetail;
+    friend: KotakShareDetail;
+  };
 }
 
 export interface AccountSummary {
@@ -61,6 +86,7 @@ export interface LendingRecord {
   friendName: string;            // Name of friend / borrower
   amount: number;                // Amount lent in ₹
   account: PaymentMethod;        // Account from which money was lent (cash | upi_kotak | upi_union)
+  lentBy?: SpendShare;           // For Kotak: whether user ('mine') or best friend ('friend') lent the money
   date: string;                  // YYYY-MM-DD
   notes?: string;                // Reason or notes
   status: LoanStatus;            // 'pending' (yet to receive) | 'settled' (received back)
@@ -138,6 +164,7 @@ export interface SummaryStats {
   topCategory: CategorySpending | null;
   topMerchant: WhereHowSpending | null;
   totalMoney: number;            // Grand total across all 3 accounts
+  totalReturned?: number;        // Grand total returned from spentForOther expenses
   remainingBalance: number;      // Grand total remaining across all 3 accounts
   spentPercentage: number;
   accountBalances: AccountBalances;

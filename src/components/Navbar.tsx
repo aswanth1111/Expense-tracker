@@ -55,8 +55,8 @@ export const Navbar: React.FC = () => {
         <div className="flex items-center justify-between h-14 sm:h-16">
           {/* Logo & Brand */}
           <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-md shadow-indigo-100 shrink-0">
-              <WalletCards className="w-4 h-4 sm:w-5 sm:h-5" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-[#7eaead] to-[#A8C9C8] flex items-center justify-center text-slate-900 shadow-md shadow-powder-glow border border-[#8ebdbb] shrink-0">
+              <WalletCards className="w-4 h-4 sm:w-5 sm:h-5 text-slate-900" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 sm:gap-2">
@@ -81,10 +81,10 @@ export const Navbar: React.FC = () => {
             {/* Total Money button */}
             <button
               onClick={() => openBudgetModal('add')}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-2 text-[11px] sm:text-xs font-semibold rounded-lg border border-slate-200 hover:border-indigo-200 bg-slate-50 hover:bg-indigo-50/60 text-slate-700 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-2 text-[11px] sm:text-xs font-semibold rounded-lg border border-slate-200 hover:border-powder-blue bg-slate-50 hover:bg-powder-blue-light text-slate-700 transition-colors cursor-pointer"
               title="Add money or edit your account balances"
             >
-              <Wallet className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+              <Wallet className="w-3.5 h-3.5 text-slate-600 shrink-0" />
               {totalMoney > 0 ? (
                 <span className="truncate">
                   Left:{' '}
@@ -97,10 +97,10 @@ export const Navbar: React.FC = () => {
               )}
             </button>
 
-            {/* Primary Add Expense Button */}
+            {/* Primary Add Expense Button (Powder Blue) */}
             <button
               onClick={openAddModal}
-              className="inline-flex items-center gap-1 sm:gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 rounded-lg shadow-sm shadow-indigo-200 transition-all transform hover:-translate-y-0.5 cursor-pointer"
+              className="inline-flex items-center gap-1 sm:gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold text-slate-950 bg-powder-blue hover:bg-powder-blue-hover active:bg-[#8ebdbb] border border-[#8ebdbb] rounded-lg shadow-xs shadow-powder-glow transition-all transform hover:-translate-y-0.5 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
               <span className="hidden xs:inline">Add Expense</span>
@@ -110,25 +110,40 @@ export const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Desktop Navigation Tabs (Hidden on mobile where bottom nav is active) */}
+      {/* Desktop Navigation Tabs */}
       <div className="hidden sm:block max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-slate-100">
-        <nav className="flex space-x-1 sm:space-x-4 overflow-x-auto py-2 scrollbar-none">
+        <nav className="flex space-x-1 sm:space-x-3 overflow-x-auto py-2 scrollbar-none">
           {navTabs.map((tab) => {
             const isActive = activeTab === tab.id;
+            const isLending = tab.id === 'lending';
+
+            let tabClass = 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70';
+            if (isActive) {
+              if (isLending) {
+                tabClass = 'bg-vibrant-orange text-white font-bold shadow-xs';
+              } else {
+                tabClass = 'bg-powder-blue text-slate-950 font-bold border border-[#8ebdbb] shadow-xs';
+              }
+            } else if (isLending) {
+              tabClass = 'text-vibrant-orange hover:bg-vibrant-orange-light font-semibold';
+            }
+
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg whitespace-nowrap transition-all cursor-pointer ${
-                  isActive
-                    ? 'bg-indigo-50 text-indigo-700 font-semibold shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
-                }`}
+                className={`flex items-center gap-2 px-3 py-1.5 text-xs sm:text-sm rounded-lg whitespace-nowrap transition-all cursor-pointer ${tabClass}`}
               >
                 {tab.icon}
                 <span>{tab.label}</span>
                 {tab.badge !== undefined && (
-                  <span className="ml-0.5 px-1.5 py-0.2 bg-amber-500 text-white rounded-full text-[10px] font-bold">
+                  <span
+                    className={`ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                      isActive && isLending
+                        ? 'bg-white text-vibrant-orange'
+                        : 'bg-vibrant-orange text-white'
+                    }`}
+                  >
                     {tab.badge}
                   </span>
                 )}

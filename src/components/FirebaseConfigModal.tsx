@@ -146,7 +146,7 @@ export const FirebaseConfigModal: React.FC<FirebaseConfigModalProps> = ({ isOpen
         {/* Modal Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/50 shrink-0">
           <div className="flex items-center space-x-2.5">
-            <div className={`p-2 rounded-xl ${isCloudConnected ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600'}`}>
+            <div className={`p-2 rounded-xl ${isCloudConnected ? 'bg-emerald-50 text-emerald-600' : 'bg-powder-blue/30 text-slate-900 border border-[#8ebdbb]/50'}`}>
               <Cloud className="w-5 h-5" />
             </div>
             <div>
@@ -190,7 +190,7 @@ export const FirebaseConfigModal: React.FC<FirebaseConfigModalProps> = ({ isOpen
               onClick={() => setActiveTab('config')}
               className={`py-2 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 activeTab === 'config'
-                  ? 'bg-white text-indigo-600 shadow-xs'
+                  ? 'bg-powder-blue text-slate-950 font-bold shadow-xs border border-[#8ebdbb]/50'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -202,7 +202,7 @@ export const FirebaseConfigModal: React.FC<FirebaseConfigModalProps> = ({ isOpen
               onClick={() => setActiveTab('guide')}
               className={`py-2 rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 activeTab === 'guide'
-                  ? 'bg-white text-indigo-600 shadow-xs'
+                  ? 'bg-powder-blue text-slate-950 font-bold shadow-xs border border-[#8ebdbb]/50'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -215,7 +215,7 @@ export const FirebaseConfigModal: React.FC<FirebaseConfigModalProps> = ({ isOpen
         {/* Modal Scrollable Body */}
         <div className="p-5 overflow-y-auto space-y-4">
           {statusMessage && (
-            <div className="p-3 text-xs rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-900 font-medium">
+            <div className="p-3 text-xs rounded-xl bg-powder-blue/20 border border-powder-blue/40 text-slate-900 font-medium">
               {statusMessage}
             </div>
           )}
@@ -223,10 +223,10 @@ export const FirebaseConfigModal: React.FC<FirebaseConfigModalProps> = ({ isOpen
           {activeTab === 'config' ? (
             <div className="space-y-4">
               {/* Quick Auto-Paste Box */}
-              <div className="p-3.5 bg-gradient-to-r from-indigo-50/60 to-purple-50/60 rounded-xl border border-indigo-100 space-y-2">
+              <div className="p-3.5 bg-gradient-to-r from-powder-blue/20 to-powder-blue/10 rounded-xl border border-powder-blue/30 space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                    <Sparkles className="w-3.5 h-3.5 text-slate-800" />
                     Quick Auto-Paste:
                   </span>
                   <span className="text-[10px] text-slate-500">From Firebase Console</span>
@@ -236,12 +236,12 @@ export const FirebaseConfigModal: React.FC<FirebaseConfigModalProps> = ({ isOpen
                   onChange={(e) => setPasteSnippet(e.target.value)}
                   placeholder={`Paste full firebaseConfig object here:\nconst firebaseConfig = {\n  apiKey: "AIza...",\n  projectId: "..."\n};`}
                   rows={3}
-                  className="w-full text-xs font-mono p-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-800 placeholder:text-slate-400"
+                  className="w-full text-xs font-mono p-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-powder-blue text-slate-800 placeholder:text-slate-400"
                 />
                 <button
                   type="button"
                   onClick={handleParseSnippet}
-                  className="w-full py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-xs transition-colors cursor-pointer"
+                  className="w-full py-2 text-xs font-bold text-slate-950 bg-powder-blue hover:bg-powder-blue-hover active:bg-[#8ebdbb] border border-[#8ebdbb] rounded-lg shadow-xs shadow-powder-glow transition-all cursor-pointer"
                 >
                   Auto-Fill Credentials Below
                 </button>
@@ -260,7 +260,7 @@ export const FirebaseConfigModal: React.FC<FirebaseConfigModalProps> = ({ isOpen
                       value={apiKey}
                       onChange={(e) => setApiKey(e.target.value)}
                       placeholder="AIzaSy..."
-                      className="w-full font-mono text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500"
+                      className="w-full font-mono text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-powder-blue"
                     />
                   </div>
 
@@ -274,7 +274,7 @@ export const FirebaseConfigModal: React.FC<FirebaseConfigModalProps> = ({ isOpen
                       value={projectId}
                       onChange={(e) => setProjectId(e.target.value)}
                       placeholder="my-expense-tracker"
-                      className="w-full font-mono text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500"
+                      className="w-full font-mono text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-powder-blue"
                     />
                   </div>
 
@@ -288,7 +288,7 @@ export const FirebaseConfigModal: React.FC<FirebaseConfigModalProps> = ({ isOpen
                       value={appId}
                       onChange={(e) => setAppId(e.target.value)}
                       placeholder="1:123456:web:abcd..."
-                      className="w-full font-mono text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500"
+                      className="w-full font-mono text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-powder-blue"
                     />
                   </div>
 
@@ -301,7 +301,7 @@ export const FirebaseConfigModal: React.FC<FirebaseConfigModalProps> = ({ isOpen
                       value={authDomain}
                       onChange={(e) => setAuthDomain(e.target.value)}
                       placeholder="my-tracker.firebaseapp.com"
-                      className="w-full font-mono text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500"
+                      className="w-full font-mono text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-powder-blue"
                     />
                   </div>
 
@@ -314,7 +314,7 @@ export const FirebaseConfigModal: React.FC<FirebaseConfigModalProps> = ({ isOpen
                       value={storageBucket}
                       onChange={(e) => setStorageBucket(e.target.value)}
                       placeholder="my-tracker.appspot.com"
-                      className="w-full font-mono text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500"
+                      className="w-full font-mono text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-powder-blue"
                     />
                   </div>
 
@@ -327,7 +327,7 @@ export const FirebaseConfigModal: React.FC<FirebaseConfigModalProps> = ({ isOpen
                       value={messagingSenderId}
                       onChange={(e) => setMessagingSenderId(e.target.value)}
                       placeholder="1234567890"
-                      className="w-full font-mono text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500"
+                      className="w-full font-mono text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-powder-blue"
                     />
                   </div>
                 </div>
@@ -355,7 +355,7 @@ export const FirebaseConfigModal: React.FC<FirebaseConfigModalProps> = ({ isOpen
                     </button>
                     <button
                       type="submit"
-                      className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-xs transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-slate-950 bg-powder-blue hover:bg-powder-blue-hover active:bg-[#8ebdbb] border border-[#8ebdbb] rounded-lg shadow-xs shadow-powder-glow transition-all cursor-pointer"
                     >
                       <Cloud className="w-3.5 h-3.5" />
                       Save & Connect
@@ -380,7 +380,7 @@ export const FirebaseConfigModal: React.FC<FirebaseConfigModalProps> = ({ isOpen
                       type="button"
                       onClick={handleMigrate}
                       disabled={isMigrating}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg border border-indigo-200 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-slate-950 bg-powder-blue hover:bg-powder-blue-hover border border-[#8ebdbb] rounded-lg shadow-xs transition-colors cursor-pointer shrink-0 disabled:opacity-50"
                     >
                       <UploadCloud className="w-3.5 h-3.5" />
                       {isMigrating ? 'Syncing...' : 'Upload Now'}
@@ -410,7 +410,7 @@ export const FirebaseConfigModal: React.FC<FirebaseConfigModalProps> = ({ isOpen
                       href="https://console.firebase.google.com"
                       target="_blank"
                       rel="noreferrer"
-                      className="text-indigo-600 underline inline-flex items-center gap-0.5"
+                      className="text-slate-900 underline font-semibold inline-flex items-center gap-0.5"
                     >
                       console.firebase.google.com <ExternalLink className="w-3 h-3 inline" />
                     </a>{' '}

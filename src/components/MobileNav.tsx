@@ -38,24 +38,39 @@ export const MobileNav: React.FC = () => {
       <div className="flex items-center justify-around">
         {navItems.map((item) => {
           const isActive = activeTab === item.id;
+          const isLending = item.id === 'lending';
+
+          let activeTextColor = 'text-slate-900 font-bold scale-105';
+          let iconBg = 'text-slate-400';
+
+          if (isActive) {
+            if (isLending) {
+              activeTextColor = 'text-vibrant-orange font-bold scale-105';
+              iconBg = 'bg-vibrant-orange-light text-vibrant-orange';
+            } else {
+              activeTextColor = 'text-slate-900 font-bold scale-105';
+              iconBg = 'bg-powder-blue text-slate-950';
+            }
+          }
+
           return (
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
               className={`flex flex-col items-center justify-center py-1 px-1.5 rounded-xl transition-all cursor-pointer min-w-[52px] relative ${
                 isActive
-                  ? 'text-indigo-600 font-bold scale-105'
+                  ? activeTextColor
+                  : isLending
+                  ? 'text-vibrant-orange/70 hover:text-vibrant-orange font-medium'
                   : 'text-slate-400 hover:text-slate-600 font-medium'
               }`}
             >
               <div
-                className={`p-1 rounded-lg transition-colors relative ${
-                  isActive ? 'bg-indigo-50 text-indigo-600' : 'text-slate-400'
-                }`}
+                className={`p-1 rounded-lg transition-colors relative ${iconBg}`}
               >
                 {item.icon}
                 {item.badge !== undefined && (
-                  <span className="absolute -top-1 -right-1.5 w-4 h-4 bg-amber-500 text-white text-[9px] font-black rounded-full flex items-center justify-center ring-2 ring-white">
+                  <span className="absolute -top-1 -right-1.5 w-4 h-4 bg-vibrant-orange text-white text-[9px] font-black rounded-full flex items-center justify-center ring-2 ring-white">
                     {item.badge}
                   </span>
                 )}

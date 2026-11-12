@@ -240,4 +240,133 @@ describe('Analytics Utility Functions', () => {
     expect(formatCurrency(1500)).toBe('₹1,500');
     expect(formatCurrency(-500)).toBe('-₹500');
   });
+
+  it('correctly tracks shared Kotak balance split between User and Best Friend', () => {
+    const balances: AccountBalances = {
+      cash: 1000,
+      upi_kotak: 5000,
+      upi_union: 2000,
+      kotakSplit: {
+        mine: 3000,
+        friend: 2000,
+      },
+    };
+
+    const expenses: Expense[] = [
+      {
+        id: 'k-1',
+        reason: 'My Books',
+        amount: 500,
+        category: 'education',
+        paymentMethod: 'upi_kotak',
+        paidBy: 'mine',
+        date: '2026-10-01',
+        createdAt: 1000,
+      },
+      {
+        id: 'k-2',
+        reason: "Friend's Jacket",
+        amount: 800,
+        category: 'shopping',
+        paymentMethod: 'upi_kotak',
+        paidBy: 'friend',
+        date: '2026-10-01',
+        createdAt: 2000,
+      },
+    ];
+
+    const stats = computeSummaryStats(expenses, balances);
+
+    // Single combined Kotak balance
+    expect(stats.accounts.upi_kotak.totalMoney).toBe(5000);
+    expect(stats.accounts.upi_kotak.spent).toBe(1300); // 500 + 800
+    expect(stats.accounts.upi_kotak.balance).toBe(3700); // 5000 - 1300
+
+    // Split breakdowns
+    expect(stats.accounts.upi_kotak.split).toBeDefined();
+    expect(stats.accounts.upi_kotak.split?.mine.totalMoney).toBe(3000);
+    expect(stats.accounts.upi_kotak.split?.mine.spent).toBe(500);
+    expect(stats.accounts.upi_kotak.split?.mine.balance).toBe(2500); // 3000 - 500
+
+    expect(stats.accounts.upi_kotak.split?.friend.totalMoney).toBe(2000);
+    expect(stats.accounts.upi_kotak.split?.friend.spent).toBe(800);
+    expect(stats.accounts.upi_kotak.split?.friend.balance).toBe(1200); // 2000 - 800
+
+    // Combined balance equals sum of individual balances
+    expect(stats.accounts.upi_kotak.balance).toBe(
+      stats.accounts.upi_kotak.split!.mine.balance + stats.accounts.upi_kotak.split!.friend.balance
+    );
+  });
+
+  it('adds expense amount back to total amount of the spent account when returned toggle is clicked', () => {
+    const balances: AccountBalances = {
+      cash: 2000,
+      upi_kotak: 5000,
+      upi_union: 3000,
+      kotakSplit: {
+        mine: 3000,
+        friend: 2000,
+      },
+    };
+
+    // 1. Initially spent for other, NOT returned yet
+    const initialExpenses: Expense[] = [
+      {
+        id: 's-1',
+        reason: 'Lunch for colleague',
+        amount: 400,
+        category: 'food',
+        paymentMethod: 'cash',
+        spentForOther: true,
+        isReturned: false,
+        date: '2026-10-01',
+        createdAt: 1000,
+      },
+      {
+        id: 's-2',
+        reason: 'Movie tickets for friend group',
+        amount: 600,
+        category: 'entertainment',
+        paymentMethod: 'upi_kotak',
+        paidBy: 'mine',
+        spentForOther: true,
+        isReturned: false,
+        date: '2026-10-01',
+        createdAt: 2000,
+      },
+    ];
+
+    const statsBeforeReturn = computeSummaryStats(initialExpenses, balances);
+
+    // Cash: 2000 - 400 = 1600
+    expect(statsBeforeReturn.accounts.cash.balance).toBe(1600);
+    // Kotak Mine: 3000 - 600 = 2400
+    expect(statsBeforeReturn.accounts.upi_kotak.split?.mine.balance).toBe(2400);
+
+    // 2. Now colleague returns the 400 cash, and friend returns 600 Kotak!
+    const returnedExpenses: Expense[] = [
+      {
+        ...initialExpenses[0],
+        isReturned: true,
+      },
+      {
+        ...initialExpenses[1],
+        isReturned: true,
+      },
+    ];
+
+    const statsAfterReturn = computeSummaryStats(returnedExpenses, balances);
+
+    // Cash: 2000 - 400 + 400 = 2000 (400 added back to Cash total amount!)
+    expect(statsAfterReturn.accounts.cash.returned).toBe(400);
+    expect(statsAfterReturn.accounts.cash.balance).toBe(2000);
+
+    // Kotak Mine: 3000 - 600 + 600 = 3000 (600 added back to Kotak Mine total amount!)
+    expect(statsAfterReturn.accounts.upi_kotak.split?.mine.returned).toBe(600);
+    expect(statsAfterReturn.accounts.upi_kotak.split?.mine.balance).toBe(3000);
+    expect(statsAfterReturn.accounts.upi_kotak.balance).toBe(5000); // 3000 + 2000
+
+    expect(statsAfterReturn.totalReturned).toBe(1000); // 400 + 600
+    expect(statsAfterReturn.remainingBalance).toBe(10000); // Full 2000 + 5000 + 3000
+  });
 });
