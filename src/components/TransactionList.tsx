@@ -24,6 +24,7 @@ export const TransactionList: React.FC = () => {
     deleteExpense,
     toggleExpenseReturned,
     openAddModal,
+    clearAllData,
   } = useExpense();
 
   if (filteredExpenses.length === 0) {
@@ -54,14 +55,32 @@ export const TransactionList: React.FC = () => {
         <h3 className="text-sm sm:text-base font-bold text-slate-900">
           All Expenses ({filteredExpenses.length})
         </h3>
-        <span className="text-xs text-slate-500">
-          Total:{' '}
-          <strong className="text-slate-900 font-bold">
-            {formatCurrency(
-              filteredExpenses.reduce((s, e) => s + e.amount, 0)
-            )}
-          </strong>
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-slate-500">
+            Total:{' '}
+            <strong className="text-slate-900 font-bold">
+              {formatCurrency(
+                filteredExpenses.reduce((s, e) => s + e.amount, 0)
+              )}
+            </strong>
+          </span>
+          <button
+            onClick={async () => {
+              if (
+                confirm(
+                  '⚠️ Are you sure you want to delete ALL records (expenses, money lending, and balances)? This will permanently delete all records and cannot be undone.'
+                )
+              ) {
+                await clearAllData();
+              }
+            }}
+            className="text-rose-500 hover:text-rose-700 flex items-center gap-1 text-xs font-semibold hover:underline cursor-pointer"
+            title="Delete all records"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Clear All
+          </button>
+        </div>
       </div>
 
       {/* 1. Mobile Cards View (< md screens) */}

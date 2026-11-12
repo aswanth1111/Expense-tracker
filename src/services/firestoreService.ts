@@ -8,6 +8,7 @@ import {
   query,
   orderBy,
   writeBatch,
+  getDocs,
   type Unsubscribe,
 } from 'firebase/firestore';
 import { getFirestoreDb } from '../config/firebase';
@@ -427,4 +428,56 @@ export const migrateLocalDataToFirestore = async (
   }
 
   return uploadedCount;
+};
+
+// ----------------------------------------------------
+// Wipe All Cloud Data (Expenses, Lending, Balances)
+// ----------------------------------------------------
+export const clearAllFirestoreData = async (): Promise<void> => {
+  const db = getFirestoreDb();
+  if (!db) {
+    return;
+  }
+
+  // 1. Delete all expenses in chunks
+  try {
+    const expensesSnap = await getDocs(collection(db, EXPENSES_COLLECTION));
+    const docs = expensesSnap.docs;
+    const chunkSize = 400;
+    for (let i = 0; i < docs.length; i += chunkSize) {
+      const chunk = docs.slice(i, i + chunkSize);
+      const batch = writeBatch(db);
+      chunk.forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+    }
+  } catch (err) {
+    console.error('Failed to clear expenses collection in Firestore:', err);
+  }
+
+  // 2. Delete all lending records in chunks
+  try {
+    const lendingSnap = await getDocs(collection(db, LENDING_COLLECTION));
+    const docs = lendingSnap.docs;
+    const chunkSize = 400;
+    for (let i = 0; i < docs.length; i += chunkSize) {
+      const chunk = docs.slice(i, i + chunkSize);
+      const batch = writeBatch(db);
+      chunk.forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+    }
+  } catch (err) {
+    console.error('Failed to clear lending collection in Firestore:', err);
+  }
+
+  // 3. Reset budget balances in Firestore to 0
+  try {
+    await setBalancesInFirestore({
+      cash: 0,
+      upi_kotak: 0,
+      upi_union: 0,
+      kotakSplit: { mine: 0, friend: 0 },
+    });
+  } catch (err) {
+    console.error('Failed to reset budget in Firestore:', err);
+  }
 };

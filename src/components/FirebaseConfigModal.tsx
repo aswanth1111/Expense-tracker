@@ -10,6 +10,9 @@ import {
   Sparkles,
   HelpCircle,
   KeyRound,
+  Eye,
+  EyeOff,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   getStoredFirebaseConfig,
@@ -26,11 +29,12 @@ interface FirebaseConfigModalProps {
 }
 
 export const FirebaseConfigModal: React.FC<FirebaseConfigModalProps> = ({ isOpen, onClose }) => {
-  const { expenses, accountBalances, lendingRecords, isCloudConnected } = useExpense();
+  const { expenses, accountBalances, lendingRecords, isCloudConnected, clearAllData } = useExpense();
 
   const [activeTab, setActiveTab] = useState<'config' | 'guide'>('config');
   const [pasteSnippet, setPasteSnippet] = useState<string>('');
   const [apiKey, setApiKey] = useState<string>('');
+  const [showApiKey, setShowApiKey] = useState<boolean>(false);
   const [authDomain, setAuthDomain] = useState<string>('');
   const [projectId, setProjectId] = useState<string>('');
   const [storageBucket, setStorageBucket] = useState<string>('');
@@ -251,15 +255,25 @@ export const FirebaseConfigModal: React.FC<FirebaseConfigModalProps> = ({ isOpen
               <form onSubmit={handleSave} className="space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                      API Key *
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-[11px] font-semibold text-slate-600">
+                        API Key *
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowApiKey(!showApiKey)}
+                        className="text-[11px] text-slate-500 hover:text-slate-800 flex items-center gap-1 cursor-pointer font-medium"
+                      >
+                        {showApiKey ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                        <span>{showApiKey ? 'Hide' : 'Show'}</span>
+                      </button>
+                    </div>
                     <input
-                      type="text"
+                      type={showApiKey ? 'text' : 'password'}
                       required
                       value={apiKey}
                       onChange={(e) => setApiKey(e.target.value)}
-                      placeholder="AIzaSy..."
+                      placeholder="••••••••••••••••••••••••••••••••••"
                       className="w-full font-mono text-xs p-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-powder-blue"
                     />
                   </div>
@@ -332,6 +346,17 @@ export const FirebaseConfigModal: React.FC<FirebaseConfigModalProps> = ({ isOpen
                   </div>
                 </div>
 
+                {/* Privacy & Security Note */}
+                <div className="flex items-start gap-2.5 p-3 bg-slate-50 border border-slate-200/80 rounded-xl text-xs text-slate-600">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-slate-800">Private &amp; Secure Storage:</span>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      Credentials are kept strictly in your local device storage or your local <code>.env.local</code> file. They are never published to GitHub or made publicly visible.
+                    </p>
+                  </div>
+                </div>
+
                 {/* Save Buttons */}
                 <div className="flex items-center justify-between pt-2">
                   {isCloudConnected ? (
@@ -364,16 +389,16 @@ export const FirebaseConfigModal: React.FC<FirebaseConfigModalProps> = ({ isOpen
                 </div>
               </form>
 
-              {/* Migrate local data to cloud option */}
-              {isCloudConnected && (
-                <div className="pt-3 border-t border-slate-100">
+              {/* Migrate local data to cloud option & Wipe Data */}
+              <div className="pt-3 border-t border-slate-100 space-y-2">
+                {isCloudConnected && (
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex items-center justify-between gap-3">
                     <div>
                       <h4 className="text-xs font-bold text-slate-800">
                         Upload Local Data to Cloud
                       </h4>
                       <p className="text-[11px] text-slate-500">
-                        Sync existing local expenses ({expenses.length}) and total money to Firestore.
+                        Sync existing local expenses ({expenses.length}) and balances to Firestore.
                       </p>
                     </div>
                     <button
@@ -386,8 +411,36 @@ export const FirebaseConfigModal: React.FC<FirebaseConfigModalProps> = ({ isOpen
                       {isMigrating ? 'Syncing...' : 'Upload Now'}
                     </button>
                   </div>
+                )}
+
+                <div className="p-3 bg-rose-50/60 rounded-xl border border-rose-200/60 flex items-center justify-between gap-3">
+                  <div>
+                    <h4 className="text-xs font-bold text-rose-800">
+                      Delete All Records (Clean Slate)
+                    </h4>
+                    <p className="text-[11px] text-rose-600/90">
+                      Permanently wipe all expenses, loans, and reset balances to 0.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (
+                        confirm(
+                          '⚠️ Are you sure you want to permanently delete ALL records from Cloud Firestore and local storage? This cannot be undone.'
+                        )
+                      ) {
+                        await clearAllData();
+                        setStatusMessage('✅ All records have been completely deleted.');
+                      }
+                    }}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-rose-700 bg-white hover:bg-rose-100 border border-rose-300 rounded-lg shadow-xs transition-colors cursor-pointer shrink-0"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Wipe All Data
+                  </button>
                 </div>
-              )}
+              </div>
             </div>
           ) : (
             /* Setup Guide Tab */

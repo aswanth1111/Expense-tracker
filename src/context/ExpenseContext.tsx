@@ -32,6 +32,7 @@ import {
   updateLendingInFirestore,
   toggleLendingStatusInFirestore,
   deleteLendingFromFirestore,
+  clearAllFirestoreData,
 } from '../services/firestoreService';
 
 export type ActiveTab =
@@ -87,7 +88,8 @@ interface ExpenseContextType {
   updateExpense: (id: string, data: Partial<Omit<Expense, 'id' | 'createdAt'>>) => void;
   deleteExpense: (id: string) => void;
   toggleExpenseReturned: (id: string) => void;
-  clearAllExpenses: () => void;
+  clearAllExpenses: () => Promise<void>;
+  clearAllData: () => Promise<void>;
 
   // Budget / Balance Actions
   openBudgetModal: (mode?: 'add' | 'set', account?: PaymentMethod) => void;
@@ -111,10 +113,25 @@ interface ExpenseContextType {
   closeCloudModal: () => void;
 }
 
-const STORAGE_EXPENSES_KEY = 'user_fresh_expenses_v3';
-const STORAGE_BALANCES_KEY = 'user_account_balances_v2';
-const STORAGE_LENDING_KEY = 'user_lending_records_v1';
+const STORAGE_EXPENSES_KEY = 'user_clean_expenses_v4';
+const STORAGE_BALANCES_KEY = 'user_clean_balances_v3';
+const STORAGE_LENDING_KEY = 'user_clean_lending_v2';
 const LEGACY_TOTAL_KEY = 'user_total_money_v1';
+
+// Purge any older cached demo/mock data so the website starts completely empty
+try {
+  [
+    'user_fresh_expenses_v3',
+    'user_account_balances_v2',
+    'user_lending_records_v1',
+    'user_total_money_v1',
+    'antigravity_expenses_v1',
+    'antigravity_expenses_v2',
+    'antigravity_currency_v1',
+  ].forEach((k) => localStorage.removeItem(k));
+} catch {
+  // ignore
+}
 
 const initialFilters: ExpenseFilters = {
   search: '',
@@ -230,23 +247,15 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
   useEffect(() => {
     if (isCloudConnected) {
       const unsubExpenses = subscribeExpenses((cloudExpenses) => {
-        if (cloudExpenses && cloudExpenses.length > 0) {
-          setExpenses(cloudExpenses);
-        }
+        setExpenses(cloudExpenses || []);
       });
 
       const unsubBalances = subscribeBalances((cloudBalances) => {
-        const hasData =
-          cloudBalances.cash > 0 || cloudBalances.upi_kotak > 0 || cloudBalances.upi_union > 0;
-        if (hasData) {
-          setAccountBalancesState(cloudBalances);
-        }
+        setAccountBalancesState(cloudBalances);
       });
 
       const unsubLending = subscribeLending((cloudLending) => {
-        if (cloudLending && cloudLending.length > 0) {
-          setLendingRecords(cloudLending);
-        }
+        setLendingRecords(cloudLending || []);
       });
 
       return () => {
@@ -608,14 +617,45 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const clearAllExpenses = () => {
+  const clearAllData = async (): Promise<void> => {
+    // 1. Immediately wipe all local in-memory state
     setExpenses([]);
+    setLendingRecords([]);
+    const zeroBalances: AccountBalances = {
+      cash: 0,
+      upi_kotak: 0,
+      upi_union: 0,
+      kotakSplit: { mine: 0, friend: 0 },
+    };
+    setAccountBalancesState(zeroBalances);
+
+    // 2. Wipe all local storage keys
     try {
       localStorage.removeItem(STORAGE_EXPENSES_KEY);
-    } catch {
-      // ignore
+      localStorage.removeItem(STORAGE_BALANCES_KEY);
+      localStorage.removeItem(STORAGE_LENDING_KEY);
+      localStorage.removeItem(LEGACY_TOTAL_KEY);
+      localStorage.removeItem('user_clean_expenses_v4');
+      localStorage.removeItem('user_clean_balances_v3');
+      localStorage.removeItem('user_clean_lending_v2');
+      localStorage.removeItem('user_fresh_expenses_v3');
+      localStorage.removeItem('user_account_balances_v2');
+      localStorage.removeItem('user_lending_records_v1');
+    } catch (e) {
+      console.error('Failed to clear local storage:', e);
+    }
+
+    // 3. Delete all data from Cloud Firestore if connected
+    if (isCloudConnected) {
+      try {
+        await clearAllFirestoreData();
+      } catch (err) {
+        console.error('Failed to clear Firestore cloud data:', err);
+      }
     }
   };
+
+  const clearAllExpenses = clearAllData;
 
   const resetFilters = () => {
     setFilters(initialFilters);
@@ -694,6 +734,7 @@ export const ExpenseProvider: React.FC<{ children: React.ReactNode }> = ({ child
         deleteExpense,
         toggleExpenseReturned,
         clearAllExpenses,
+        clearAllData,
         openBudgetModal,
         closeBudgetModal,
         setAccountBalances,

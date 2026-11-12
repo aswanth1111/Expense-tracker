@@ -90,20 +90,23 @@ const MainAppContent: React.FC = () => {
           </div>
 
           <div className="flex items-center space-x-4 text-[11px] sm:text-xs">
-            <span>{expenses.length} records</span>
-            {expenses.length > 0 && (
-              <button
-                onClick={() => {
-                  if (confirm('Are you sure you want to clear all expenses? This cannot be undone.')) {
-                    clearAllExpenses();
-                  }
-                }}
-                className="text-rose-500 hover:text-rose-700 flex items-center gap-1 hover:underline font-medium cursor-pointer"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-                Clear All
-              </button>
-            )}
+            <span>{expenses.length} expenses</span>
+            <button
+              onClick={async () => {
+                if (
+                  confirm(
+                    '⚠️ Are you sure you want to delete ALL records? This will permanently delete all expenses, friends lending records, and reset balances to 0 (both locally and from Cloud Firestore). This cannot be undone.'
+                  )
+                ) {
+                  await clearAllExpenses();
+                }
+              }}
+              className="text-rose-500 hover:text-rose-700 flex items-center gap-1 hover:underline font-medium cursor-pointer"
+              title="Delete all records and wipe data"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Clear All Records
+            </button>
           </div>
         </div>
       </footer>

@@ -18,15 +18,15 @@ export interface FirebaseConfig {
 
 const STORAGE_CONFIG_KEY = 'user_firebase_config_v1';
 
-// Default configuration provided by user
+// Default configuration is empty to ensure credentials are never exposed publicly
 export const DEFAULT_FIREBASE_CONFIG: FirebaseConfig = {
-  apiKey: 'AIzaSyBPka0GVtnJwjvwjuYd1EwyxBq0FDTk5ac',
-  authDomain: 'expense-tracker-accb7.firebaseapp.com',
-  projectId: 'expense-tracker-accb7',
-  storageBucket: 'expense-tracker-accb7.firebasestorage.app',
-  messagingSenderId: '785115172323',
-  appId: '1:785115172323:web:7162e0a547dfe897d224d6',
-  measurementId: 'G-PMMGN3PRM4',
+  apiKey: '',
+  authDomain: '',
+  projectId: '',
+  storageBucket: '',
+  messagingSenderId: '',
+  appId: '',
+  measurementId: '',
 };
 
 export const getStoredFirebaseConfig = (): FirebaseConfig => {
@@ -83,6 +83,10 @@ let firestoreInstance: Firestore | null = null;
 
 export const initFirebase = (): { app: FirebaseApp | null; db: Firestore | null } => {
   const config = getStoredFirebaseConfig();
+
+  if (!config.apiKey || !config.projectId || !config.appId) {
+    return { app: null, db: null };
+  }
 
   try {
     if (!appInstance) {

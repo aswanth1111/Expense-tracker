@@ -2,7 +2,6 @@ rules_version = '2';
 
 // ===============================================================
 // Expense Tracker Firestore Security Rules
-// Project ID: expense-tracker-accb7
 // ===============================================================
 //
 // Assumed Data Model
